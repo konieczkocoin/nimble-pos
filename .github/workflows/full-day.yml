@@ -1,8 +1,9 @@
 name: Full venue day acceptance
 
-# Explicit opt-in: this uses simulated identity and chain adapters, never live funds.
+# Manual execution or the native-acceptance pipeline; simulated wallet/chain only.
 on:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

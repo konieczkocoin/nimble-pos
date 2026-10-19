@@ -59,11 +59,20 @@ jobs:
           NATIVE_POSTGRES_TEST_URL: postgres://nimble_test:disposable_ci_only@localhost:${{ job.services.postgres.ports[5432] }}/nimble_native_test
           NATIVE_POSTGRES_ALLOW_RESET: 'yes'
         run: node scripts/test-native-postgres.mjs 2>&1 | tee -a native-postgres.log
+      - name: Verify economics and finance screens
+        run: pnpm --filter @nimble/web exec vitest run test/economics.test.tsx test/finance.test.tsx --reporter=verbose 2>&1 | tee economics-ui.log
       - name: Preserve native acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-postgres-${{ github.sha }}
-          path: native-postgres.log
+          path: |
+            native-postgres.log
+            economics-ui.log
           if-no-files-found: ignore
           retention-days: 14
+
+  full-day:
+    if: github.event_name == 'pull_request'
+    needs: native-postgres
+    uses: ./.github/workflows/full-day.yml
