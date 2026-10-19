@@ -1,6 +1,8 @@
 # Full venue day — task10
 
-2026-10-19. Status: **blocked; scenario prepared, browser acceptance not executed**.
+2026-10-19. Status: **in progress in CI; final browser acceptance result pending**.
+Current run39246603442 on recovery/native-acceptance-20261019; native API
+and report UI gate passed. Earlier blocked observations below are historical.
 
 The isolated Playwright scenario uses four browser contexts (owner, manager,
 cashier, customer), real business routes and migrations against a dedicated

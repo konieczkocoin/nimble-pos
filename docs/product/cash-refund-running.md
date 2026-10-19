@@ -47,3 +47,11 @@ Brak uwag wymagających zmiany. Po integracji UI/raportów oraz dodaniu guardu f
 ## Następne i kopia
 Zadanie10: pełny dzień lokalu w przeglądarce, osobne konteksty i rzeczywiste API/natywna baza. Zależności02/05/09 nie mają jeszcze natywnego odbioru; nie udawaj zaliczonego E2E.
 Pełny checkpoint etapu: NIMBLE-CASH-REFUND-FULL-CODE.zip, po czystym commicie i świeżym odtworzeniu. Poprzednia kopia zachowana: NIMBLE-CASH-REPORT-FULL-CODE.zip, libfile_a02974243194819184448a5ad8f631f4, SHA2562a8f0b9e88818764cbb5d3a52c86b9cae0c1ffd862dc2198a2490c11ab7e65df. To kopie kodu i historii Git, nie produkcyjnej bazy i mediów.
+
+## Aktualny odbiór — 19.10.2026
+
+API test/cash-refund.test.ts: 6/6 PASS w pełnym natywnym run39246316523 (PostgreSQL16.15, pełne API401/401). UI test/cash-refund.test.tsx: 4/4 PASS w aktualnym lokalnym przebiegu18/18 dla03–09.
+Niezależny audyt Spec nie znalazł luk w kryteriach ticketu. Poprzednie
+opisy otwartej bramki PostgreSQL są historyczne; aktualne dowody:
+native-postgres-acceptance-20261019.json/.txt i acceptance-01-09-running.md.
+Brak wdrożenia i odbioru fizycznego telefonu w tym etapie.

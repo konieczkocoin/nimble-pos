@@ -33,3 +33,11 @@ Oddzielne przeglądy Spec i Standards. Poprawiono świeżość uprawnień, konfl
 08: jawny podział raportów i eksportów CASH/CRYPTO. Obecne minimalne sumy liczą obie sprzedaże, bez dodawania gotówki do aktywów blockchain.
 09: zwroty gotówkowe i fizyczne potwierdzenie wypłaty. Obecnie ukryte w UI, API zwraca CASH_REFUND_NOT_AVAILABLE. Nie uruchamiać operacyjnie przed tymi bramkami i natywnym odbiorem.
 Pełna kopia tego etapu: NIMBLE-CASH-SALE-FULL-CODE.zip; tworzona po czystym commicie, z pełną historią i sprawdzeniem odtworzenia. Poprzednia kopia zachowana: NIMBLE-DRAFT-EXECUTION-FULL-CODE.zip, libfile_b0db38c37f6c8191b8f6ed9df63c2669.
+
+## Aktualny odbiór — 19.10.2026
+
+API test/cash-sale.test.ts: 9/9 PASS w pełnym natywnym run39246316523 (PostgreSQL16.15, pełne API401/401). UI test/cash-sale.test.tsx: 6/6 PASS w aktualnym lokalnym przebiegu18/18 dla03–09.
+Niezależny audyt Spec nie znalazł luk w kryteriach ticketu. Poprzednie
+opisy otwartej bramki PostgreSQL są historyczne; aktualne dowody:
+native-postgres-acceptance-20261019.json/.txt i acceptance-01-09-running.md.
+Brak wdrożenia i odbioru fizycznego telefonu w tym etapie.

@@ -25,8 +25,9 @@ test('SIMULATED wallet/chain: a full venue day uses real routes, native DB and f
   })
   await test.step('save and execute production draft through manager UI',async()=>{
    await manager.getByRole('button',{name:'Production and preparations',exact:true}).click()
-   await manager.getByLabel('Production recipe',{exact:true}).selectOption(f.recipe.id)
-   await manager.getByLabel('Finished stock item',{exact:true}).selectOption(f.finished.id)
+   // Playwright label text includes nested option text; keep strict single-element matching without exact text.
+   await manager.getByLabel('Production recipe').selectOption(f.recipe.id)
+   await manager.getByLabel('Finished stock item').selectOption(f.finished.id)
    await manager.getByLabel('Expected yield per batch',{exact:true}).fill('10')
    await manager.getByLabel('Production reason',{exact:true}).fill('One batch of ten portions')
    const draft=await changed<ProductionDraft>(manager,`${f.base}/production/drafts`,()=>manager.getByRole('button',{name:'Save production draft',exact:true}).click())
@@ -47,7 +48,7 @@ test('SIMULATED wallet/chain: a full venue day uses real routes, native DB and f
    cashOrder=await changed<MerchantOrder>(cashier,'/orders',()=>cashier.getByRole('button',{name:/^Share checkout/}).click())
    await cashier.getByRole('button',{name:'Queue',exact:true}).click()
    const card=cashier.locator('.m-order').first()
-   await card.getByRole('button',{name:'Rabaty i zgody',exact:true}).click();await card.getByLabel('Rodzaj rabatu',{exact:true}).selectOption('FIXED');await card.getByLabel('Wartość',{exact:true}).fill('500');await card.getByLabel('Powód rabatu',{exact:true}).fill('Full-day bounded promotion')
+   await card.getByRole('button',{name:'Rabaty i zgody',exact:true}).click();await card.getByLabel('Rodzaj rabatu').selectOption('FIXED');await card.getByLabel('Wartość',{exact:true}).fill('500');await card.getByLabel('Powód rabatu',{exact:true}).fill('Full-day bounded promotion')
    await changed(cashier,`${f.base}/orders/${cashOrder.id}/discount`,()=>card.getByRole('button',{name:'Zapisz rabat lub wniosek',exact:true}).click())
    await expect(card.getByText(/Oczekuje na zgodę właściciela/)).toBeVisible()
    await owner.goto('/merchant/owner');await owner.getByRole('button',{name:'Rabaty i zgody',exact:true}).click()
@@ -96,13 +97,13 @@ test('SIMULATED wallet/chain: a full venue day uses real routes, native DB and f
   })
   await test.step('owner records a one-portion loss and checks physical stock',async()=>{
    await owner.goto('/merchant/owner');await owner.getByRole('button',{name:'Inventory',exact:true}).click();await owner.getByRole('button',{name:'Deliveries, losses and stocktakes',exact:true}).click();await owner.getByRole('button',{name:'Losses',exact:true}).click()
-   await owner.getByLabel('Loss item',{exact:true}).selectOption(f.finished.id);await owner.getByLabel('Loss quantity',{exact:true}).fill('1');await owner.getByLabel('Loss type',{exact:true}).selectOption('DAMAGED');await owner.getByLabel('Loss explanation',{exact:true}).fill('One prepared portion damaged')
+   await owner.getByLabel('Loss item').selectOption(f.finished.id);await owner.getByLabel('Loss quantity',{exact:true}).fill('1');await owner.getByLabel('Loss type').selectOption('DAMAGED');await owner.getByLabel('Loss explanation',{exact:true}).fill('One prepared portion damaged')
    const loss=await changed<InventoryLoss>(owner,`${f.base}/inventory/losses`,()=>owner.getByRole('button',{name:'Submit loss',exact:true}).click())
    expect(loss.status).toBe('APPLIED');await expect(owner.getByText('Damaged · Applied to stock',{exact:true})).toBeVisible();expect(await f.stock()).toEqual(EXPECTED.afterLoss)
   })
   let frozenShift!:MerchantReport
   await test.step('cashier hands over and closes; returning manager acknowledges on the same terminal',async()=>{
-   await cashier.getByRole('button',{name:'Handover',exact:true}).click();await cashier.getByLabel('Handover note',{exact:true}).fill('Full-day stock and orders reconciled');await cashier.getByLabel('Successor',{exact:true}).selectOption(f.manager.id)
+   await cashier.getByRole('button',{name:'Handover',exact:true}).click();await cashier.getByLabel('Handover note',{exact:true}).fill('Full-day stock and orders reconciled');await cashier.getByLabel('Successor').selectOption(f.manager.id)
    const handover=await changed<ShiftHandover>(cashier,`${f.base}/handovers`,()=>cashier.getByRole('button',{name:'Record handover snapshot',exact:true}).click());expect(handover.status).toBe('PENDING')
    await cashier.getByRole('button',{name:'Shift',exact:true}).click();frozenShift=await changed<MerchantReport>(cashier,`/shifts/${shift.id}/close`,()=>cashier.getByRole('button',{name:/^Close my shift/}).click());await expect(cashier.getByText('Shift closed. Your summary is ready.',{exact:true})).toBeVisible();expect(frozenShift.totals.grossMinor).toBe(2000)
    const next=await f.login(f.manager,'5678');activeManagerToken=next.token;await staffSession(manager,f.terminal.terminalToken,next);const managerShift=await changed<MerchantShift>(manager,'/shifts',()=>manager.getByRole('button',{name:/^Open shift/}).click());await manager.getByRole('button',{name:'Handover',exact:true}).click();await manager.getByRole('button',{name:'I acknowledge these open matters',exact:true}).click();await expect(manager.getByText('Acknowledged',{exact:true})).toBeVisible()
@@ -110,7 +111,7 @@ test('SIMULATED wallet/chain: a full venue day uses real routes, native DB and f
    await manager.getByRole('button',{name:'Shift',exact:true}).click();const managerReport=await changed<MerchantReport>(manager,`/shifts/${managerShift.id}/close`,()=>manager.getByRole('button',{name:/^Close my shift/}).click());expect(managerReport.totals.grossMinor).toBe(0)
   })
   await test.step('owner confirms physical cash refund without altering stock or the closed shift',async()=>{
-   await owner.goto('/merchant/owner');await owner.getByLabel('Cash order for refund',{exact:true}).selectOption(cashOrder.id)
+   await owner.goto('/merchant/owner');await owner.getByLabel('Cash order for refund').selectOption(cashOrder.id)
    await owner.getByLabel('Cash refund reason',{exact:true}).fill('Full-day customer return');await owner.getByLabel('I understand this request cannot be cancelled and stops pickup.',{exact:true}).check();const requested=await changed<CashRefund>(owner,`/orders/${cashOrder.id}/cash/refund/request`,()=>owner.getByRole('button',{name:'Request full cash refund',exact:true}).click())
    expect((await manager.request.post(API+`/v1/merchant/orders/${cashOrder.id}/cash/refund/confirm`,{headers:{authorization:`Bearer ${activeManagerToken}`,'idempotency-key':crypto.randomUUID()},data:{refundId:requested.id,cashHandedBack:true}})).status()).toBe(403)
    await owner.getByLabel('I have physically handed the full cash amount back to the customer.',{exact:true}).check();await owner.getByRole('button',{name:'Confirm cash physically handed back',exact:true}).click();await expect(owner.getByText('Cash refund confirmed',{exact:true})).toBeVisible()
@@ -134,5 +135,5 @@ test('SIMULATED wallet/chain: a full venue day uses real routes, native DB and f
    await owner.reload();await expect(owner.getByRole('option',{name:'Private second venue',exact:true})).toHaveCount(0)
   })
   expect(errors).toEqual([])
- }finally{await Promise.all([owner,manager,cashier,customer].map(p=>p.context().close()))}
+ }finally{await Promise.allSettled([owner,manager,cashier,customer].map(p=>p.context().close()))}
 })

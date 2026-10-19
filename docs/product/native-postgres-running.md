@@ -1,6 +1,10 @@
 # PL-02 — native PostgreSQL acceptance
 
-Status: **partially implemented; execution blocked; acceptance remains OPEN** (2026-10-16).
+Status: **native API acceptance PASSED** (2026-10-19). Earlier blocked attempts
+below are historical. Run39246316523:401/401 tests in79/79files, fail0/skip0,
+PostgreSQL16.15, independent backend PIDs84/85. Evidence:
+native-postgres-acceptance-20261019.json and .txt. Device/live-network gates
+remain separate.
 
 ## Reproducible runner
 

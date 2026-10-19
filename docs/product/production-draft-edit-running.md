@@ -67,3 +67,11 @@ Wszystkie75 plików, dokładnie raz, bez pominięć/duplikatów i bez pending:
 natywnego PG. PGlite nie zastępuje odbioru blokad i niezależnych sesji.
 Pełny przebieg API dotyczy9d2d167; późniejszy a11a4d6 zmienia wyłącznie UI
 i jego test, po czym pełny web292/292 i build ponowiono z sukcesem.
+
+## Aktualny odbiór — 19.10.2026
+
+API test/production-draft-edit.test.ts: 2/2 PASS w pełnym natywnym run39246316523 (PostgreSQL16.15, pełne API401/401). UI test/production-draft-edit.test.tsx: 1/1 PASS w aktualnym lokalnym przebiegu18/18 dla03–09.
+Niezależny audyt Spec nie znalazł luk w kryteriach ticketu. Poprzednie
+opisy otwartej bramki PostgreSQL są historyczne; aktualne dowody:
+native-postgres-acceptance-20261019.json/.txt i acceptance-01-09-running.md.
+Brak wdrożenia i odbioru fizycznego telefonu w tym etapie.

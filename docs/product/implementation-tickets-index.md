@@ -1,5 +1,12 @@
 # Plan wykonawczy Nimble — zadania dla modeli o mniejszej zdolności rozumowania
 
+**Aktualizacja19.10.2026:** odbiór01–09 zaliczony; natywne API401/401
+w79 plikach i aktualne testy UI modułów. Macierz i dokładne źródła:
+[acceptance-01-09-running.md](acceptance-01-09-running.md).
+Scenariusz10 uruchomiony przez pipeline po natywnym API i ekranach raportów;
+jego wynik pozostaje osobnym odbiorem. Poniższy opis startowego stanu planu
+i blokady01 jest historyczny.
+
 18.10.2026, baza1095cf9. Przygotowano 30 osobnych ticketów: 25 wykonawczych/odbiorowych oraz 5
 projektowo-decyzyjnych. Późniejsze integracje zależne od decyzji wymagają
 dalszego podziału po zamknięciu ich kontraktów.
@@ -16,7 +23,7 @@ dodatkowej rundy zatwierdzania samej ich redakcji.
 ## Jak wybierać zadanie
 Pracuj po zależnościach. Numeracja jest zalecaną kolejnością; 03 i06 mogą
 powstawać niezależnie po01, 12 równolegle z11, 24 po16 bez czekania na API.
-W obecnym środowisku01 jest blocked; implementacje dziedziczą zależności. Dopuszczono niezależne przygotowanie projektowego kontraktu06 podczas tej blokady, bez znoszenia odbioru PG dla07–09.
+Przy tworzeniu planu01 był blocked; implementacje dziedziczyły zależności. Dopuszczono niezależne przygotowanie projektowego kontraktu06 podczas tej blokady. Natywny odbiór07–09 zaliczono19.10; patrz aktualizacja powyżej.
 Nie oznaczono wszystkich sztucznie jako ready-for-agent.
 
 ## Podział pracy według ryzyka

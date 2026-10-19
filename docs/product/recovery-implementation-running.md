@@ -335,3 +335,29 @@ Pełny natywny runner nadal zablokowany przed API (brak konfiguracji PG),
 testy API0 wykonanych. Task01/PL-02 pozostają blocked. Szczegóły
 native-postgres-evidence-running.md. Nowa pełna kopia docelowa:
 NIMBLE-NATIVE-EVIDENCE-FULL-CODE.zip; wcześniejsze archiwa zachowane.
+
+## Kontynuacja19.10.2026 — natywny odbiór01–09 i pipeline10
+
+Usunięto blokadę środowiskową: dokładny snapshot a4285f8 opublikowano na
+osobnej gałęzi recovery/native-acceptance-20261019 w konieczkocoin/nimble-pos.
+Drzewo lokalne i zdalne e6dc1bf... zweryfikowano jako identyczne. Draft PR1
+do feat/nimble-pos, bez scalenia/wdrożenia. Natywny run39246316523:
+PostgreSQL16.15, PID84/85, API401/401 w79 plikach, fail0/skip0, w tym
+merchantNotificationPersistence PASS. Dowody trwale w źródłach:
+native-postgres-acceptance-20261019.json/.txt.
+
+W tej kontynuacji UI kosztów/finansów7/7 i UI szkiców/gotówki18/18 PASS,
+API tsc/web build PASS. Nowy test eeeceb9 sprawdza kwoty marży przed i po
+zwrocie. Niezależne przeglądy oraz audyt kryteriów03–09 bez luk; macierz
+acceptance-01-09-running.md. Zaktualizowano wyniki01–09 i historyczne blokady.
+
+Pipeline8fc0d05 (zdalnie eb239cd) wywołuje istniejący full-day jako reusable
+workflow dopiero po natywnym API i UI raportów. W run39246603442 pierwsza
+bramka PASS; wynik pełnego dnia w full-day-running.md. Symulowany tylko
+portfel/tożsamość/łańcuch; biznesowe API i baza rzeczywiste.
+
+Pełny checkpoint docelowy: NIMBLE-NATIVE-ACCEPTANCE-FULL-CODE.zip;
+poprzedni NIMBLE-NATIVE-EVIDENCE-FULL-CODE.zip,
+libfile_820668cb19548191af651fc515837963,
+SHA256dcbfb6cce7b4c7125fc488180355cbafc6adc925fd8a41512684cca998220045.
+Nowe ID/hash potwierdzić w zewnętrznym raporcie po końcowym zapisie.

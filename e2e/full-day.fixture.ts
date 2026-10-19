@@ -16,7 +16,7 @@ export async function actorPage(browser:Browser,role:string){
 }
 export async function ownerToken(page:Page){const token=await page.evaluate(()=>localStorage.getItem('nimble.jwt'));expect(token).toBeTruthy();return token!}
 export function client(page:Page,token:string){return async<T=unknown>(method:string,path:string,data?:object,key?:string)=>json<T>(await page.request.fetch(API+'/v1/merchant'+path,{method,headers:{authorization:`Bearer ${token}`,...(key?{'idempotency-key':key}:{})},data}))}
-export async function changed<T=unknown>(page:Page,path:string,action:()=>Promise<unknown>){const response=page.waitForResponse(r=>new URL(r.url()).pathname===('/v1/merchant'+path)&&['POST','PATCH'].includes(r.request().method()));await action();return json<T>(await response)}
+export async function changed<T=unknown>(page:Page,path:string,action:()=>Promise<unknown>){const [response]=await Promise.all([page.waitForResponse(r=>new URL(r.url()).pathname===('/v1/merchant'+path)&&['POST','PATCH'].includes(r.request().method()),{timeout:15000}),action()]);return json<T>(response)}
 export async function staffSession(page:Page,terminalToken:string,session:StaffSession){
  await page.goto('/')
  await page.evaluate(({terminalToken,session,base})=>{localStorage.setItem(`nimble:merchant:${base}:terminal`,terminalToken);sessionStorage.setItem(`nimble:merchant:${base}:cashier`,JSON.stringify(session))},{terminalToken,session,base:API})

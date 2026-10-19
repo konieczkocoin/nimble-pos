@@ -39,3 +39,11 @@ Przeglądy: Spec0 otwartych uwag funkcjonalnych; Standards0 otwartych uwag. Oba 
 09: zwroty gotówkowe, osobna wypłata i powiązanie z jej zmianą/dniem; dopiero wtedy agregacja CASH_REFUND_CONFIRMED/CASH_REFUND_LIABILITY. Tutaj pola zwrotów są zerowe wyłącznie dla walut posiadających receipt, ponieważ ścieżka wypłaty nie jest jeszcze wdrożona. Nie twórz pozornej wypłaty ani nie zmieniaj netCashAtomic na gotówkę.
 
 Pełny checkpoint tego etapu: NIMBLE-CASH-REPORT-FULL-CODE.zip; tworzenie po czystym commicie, weryfikacja świeżego klonu i fsck, następnie trwały zapis. Nie zawiera danych produkcyjnej bazy, mediów i sekretów. Poprzednia pełna kopia zachowana: NIMBLE-CASH-SALE-FULL-CODE.zip, libfile_3b21ec0e1bc48191a037fb86fe12832c.
+
+## Aktualny odbiór — 19.10.2026
+
+API test/cash-report.test.ts: 4/4 PASS w pełnym natywnym run39246316523 (PostgreSQL16.15, pełne API401/401). UI test/cash-report.test.tsx: 2/2 PASS w aktualnym lokalnym przebiegu18/18 dla03–09.
+Niezależny audyt Spec nie znalazł luk w kryteriach ticketu. Poprzednie
+opisy otwartej bramki PostgreSQL są historyczne; aktualne dowody:
+native-postgres-acceptance-20261019.json/.txt i acceptance-01-09-running.md.
+Brak wdrożenia i odbioru fizycznego telefonu w tym etapie.

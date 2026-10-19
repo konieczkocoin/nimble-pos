@@ -60,5 +60,6 @@ jobs:
           path: |
             full-day.log
             full-day-results.json
+            e2e/test-results/**/error-context.md
           if-no-files-found: ignore
           retention-days: 14

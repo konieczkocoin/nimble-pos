@@ -66,3 +66,11 @@ który wymaga natywnego połączenia PG. Wszystkie pozostałe testy zaliczone
 na pomocniczym PGlite. Kod API z d25fb38; później tylko uzupełniono asercje
 źródła w nowym teście i osobno zaliczono2/2. Kod UI po poprawce epoki:
 pełne291/291 oraz końcowy build zaliczone. Ten wynik nie zastępuje zadania01.
+
+## Aktualny odbiór — 19.10.2026
+
+API test/production-drafts.test.ts: 2/2 PASS w pełnym natywnym run39246316523 (PostgreSQL16.15, pełne API401/401). UI test/production-drafts.test.tsx: 3/3 PASS w aktualnym lokalnym przebiegu18/18 dla03–09.
+Niezależny audyt Spec nie znalazł luk w kryteriach ticketu. Poprzednie
+opisy otwartej bramki PostgreSQL są historyczne; aktualne dowody:
+native-postgres-acceptance-20261019.json/.txt i acceptance-01-09-running.md.
+Brak wdrożenia i odbioru fizycznego telefonu w tym etapie.
