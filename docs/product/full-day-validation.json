@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-19",
+  "ticket": 10,
+  "status": "blocked",
+  "guards": {
+    "passed": 11,
+    "skipped": 0
+  },
+  "typecheck": "passed",
+  "discovered": 1,
+  "browserExecuted": 0,
+  "blockingReason": "FULL_DAY_TEST_DATABASE_URL not configured; native PostgreSQL required",
+  "specReview": "source findings resolved; native acceptance open",
+  "standardsReview": "no remaining source findings",
+  "productRegression": "not rerun; test-only changes",
+  "ciContinuation": {
+    "workflow": ".github/workflows/full-day.yml",
+    "yamlParse": "passed",
+    "shellSyntax": "passed",
+    "guardsPassed": 2,
+    "discovered": 1,
+    "actionsExecuted": false,
+    "browserExecuted": 0,
+    "localRunner": "blocked before migration: no database URL",
+    "sourceReviews": {
+      "spec": "no findings",
+      "standards": "no findings"
+    },
+    "localPostgres": "absent; only UID0 mapped"
+  }
+}

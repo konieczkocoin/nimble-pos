@@ -1,0 +1,43 @@
+{
+  "base": "5b40f54",
+  "api": {
+    "engine": "PGlite; not independent native PostgreSQL sessions",
+    "passed": 400,
+    "failed": 1,
+    "total": 401,
+    "files": 79,
+    "failures": [
+      "apps/api/test/merchantNotificationPersistence.test.ts"
+    ]
+  },
+  "targetedApi": {
+    "passed": 22,
+    "total": 22,
+    "files": 5
+  },
+  "cashRefundApi": {
+    "passed": 6,
+    "total": 6
+  },
+  "web": {
+    "passed": 306,
+    "total": 306,
+    "files": 72
+  },
+  "cashRefundUi": {
+    "passed": 4,
+    "total": 4
+  },
+  "shared": {
+    "passed": 58,
+    "total": 58,
+    "files": 9
+  },
+  "typecheckApi": "pass",
+  "buildWeb": "pass; existing large chunk warning",
+  "nativePostgres": "blocked before test execution; NATIVE_POSTGRES_BIN and NATIVE_POSTGRES_TEST_URL unavailable",
+  "review": {
+    "spec": "no open concrete defect; local evidence gaps filled and rechecked; native sessions still required",
+    "standards": "no actionable findings after final integration and accounting guard"
+  }
+}

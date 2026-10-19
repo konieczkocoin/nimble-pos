@@ -1,0 +1,50 @@
+import {afterAll,expect,it} from 'vitest';
+import {freshDb} from './helpers/db';
+import {authedApp,makeUser} from './helpers/actors';
+const {db,close}=await freshDb(),{app,tokenFor}=authedApp(db);const key=()=>crypto.randomUUID();
+afterAll(async()=>{await app.close();await close()});
+async function setup(){
+ const headers={authorization:`Bearer ${await tokenFor(await makeUser(db,'NQ-production-'+key()))}`};
+ const venue=(await app.inject({method:'POST',url:'/v1/merchant/venues',headers,payload:{name:'Production',fiatCurrency:'EUR',nimAddress:'NQ-production-123'}})).json();
+ const base=`/v1/merchant/venues/${venue.id}`,call=(method:any,path:string,payload?:any)=>app.inject({method,url:base+path,headers,payload});
+ const item=async(name:string,unit:string,openingQuantity:number)=>(await call('POST','/inventory',{name,unit,openingQuantity,tracked:true,threshold:0,reason:'Opening',idempotencyKey:key()})).json();
+ const raw=await item('Coffee','MILLIGRAM',100000),output=await item('Prepared coffee','PORTION',0);
+ const recipe=(await call('POST','/recipes',{name:'Coffee batch',ingredients:[{kind:'ITEM',itemId:raw.id,quantity:'18',unit:'g'}],reason:'Batch recipe',idempotencyKey:key()})).json();
+ const payload={recipeVersionId:recipe.id,outputItemId:output.id,batches:2,expectedYieldPerBatch:3,actualYield:5,reason:'Two prepared batches',idempotencyKey:key()};
+ const stock=async()=>(await call('GET','/inventory')).json().items;
+ return {call,raw,output,recipe,payload,stock,headers,base};
+}
+it('persists a planning draft across reads without recording production or changing stock',async()=>{
+ const f=await setup(),before=await f.stock();
+ const {actualYield,...planning}=f.payload;
+ const input={...planning,source:{from:'2026-10-01T00:00:00.000Z',until:'2026-10-08T00:00:00.000Z',horizonDays:3,includeLosses:false}};
+ const created=await f.call('POST','/production/drafts',input);
+ expect(created.statusCode).toBe(200);
+ expect(created.json()).toMatchObject({status:'DRAFT',revision:1,batches:2,expectedYieldPerBatch:3,recipeVersionId:f.recipe.id,outputItemId:f.output.id});
+ expect(created.json()).not.toHaveProperty('actualYield');
+ expect(created.json().source).toEqual(input.source);
+ expect((await f.call('POST','/production/drafts',input)).json()).toEqual(created.json());
+ expect((await f.call('POST','/production/drafts',{...input,batches:3})).statusCode).toBe(409);
+ expect((await f.call('GET','/production/drafts')).json().items).toContainEqual(created.json());
+ expect((await f.call('GET','/production/drafts/'+created.json().id)).json()).toEqual(created.json());
+ expect((await f.call('GET','/production')).json().items).toHaveLength(0);
+ expect(await f.stock()).toEqual(before);
+});
+it('isolates draft access and validates planning assumptions without exposing recipe costs',async()=>{
+ const f=await setup(),other=await setup(),{actualYield,...input}=f.payload;
+ const made=await f.call('POST','/production/drafts',input);expect(made.statusCode).toBe(200);
+ const id=made.json().id;
+ expect((await f.call('POST','/production/drafts',{...input,idempotencyKey:key(),source:{from:'2026-10-01T01:00:00.000Z',until:'2026-10-08T00:00:00.000Z',horizonDays:3,includeLosses:false}})).statusCode).toBe(400);
+ expect((await app.inject({url:f.base+'/production/drafts/'+id,headers:other.headers})).statusCode).toBe(404);
+ expect((await f.call('POST','/production/drafts',{...input,idempotencyKey:key(),outputItemId:other.output.id})).statusCode).toBe(404);
+ expect((await f.call('POST','/production/drafts',{...input,idempotencyKey:key(),actualYield:3})).statusCode).toBe(400);
+ expect((await f.call('POST','/production/drafts',{...input,idempotencyKey:key(),batches:1000,expectedYieldPerBatch:2147483647})).statusCode).toBe(400);
+ const employee=(await f.call('POST','/employees',{name:'Planner',pin:'5678'})).json(),paired=(await f.call('POST','/terminal')).json();
+ const headers={authorization:`Bearer ${(await app.inject({method:'POST',url:'/v1/merchant/terminal/login',headers:{'x-terminal-token':paired.terminalToken},payload:{employeeId:employee.id,pin:'5678'}})).json().token}`};
+ expect((await app.inject({url:f.base+'/production/drafts',headers})).statusCode).toBe(403);
+ await app.inject({method:'PATCH',url:`/v1/merchant/employees/${employee.id}`,headers:f.headers,payload:{role:'MANAGER',permissions:['inventory.manage'],reason:'Planning access'}});
+ const allowed=await app.inject({url:f.base+'/production/drafts/'+id,headers});expect(allowed.statusCode).toBe(200);expect(allowed.json()).not.toHaveProperty('unitCosts');
+ expect((await app.inject({method:'POST',url:f.base+'/production/drafts',headers,payload:{...input,idempotencyKey:key()}})).statusCode).toBe(200);
+ await app.inject({method:'PATCH',url:`/v1/merchant/employees/${employee.id}`,headers:f.headers,payload:{role:'CASHIER',permissions:[],reason:'Access removed'}});
+ expect((await app.inject({url:f.base+'/production/drafts/'+id,headers})).statusCode).toBe(403);
+});

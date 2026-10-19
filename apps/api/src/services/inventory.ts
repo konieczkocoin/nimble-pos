@@ -1,3 +1,4 @@
+import {movementValuation,recordMovementValuation} from './inventoryValuation';
 import {moveLots,type LotMutation} from './inventoryLots';
 import {updateInventoryCost,type UnitCost} from './inventoryCost';
 import { stockAvailability } from './stockReservations';
@@ -41,8 +42,10 @@ export async function inventoryMove(store: Db, a: MerchantActor, venueId: string
     if (quantity > 2147483647)
         fail(409, 'STOCK_LIMIT');
     const lotAllocations=await moveLots(store,old,delta,kind,lotMutation);
+    const valuation=await movementValuation(store,old,delta,unitCostMinor,kind,reversesMovementId);
     await updateInventoryCost(store,old,delta,unitCostMinor,kind==='RECEIPT_CORRECTION'||kind==='PRODUCTION_REVERSAL');
     const [item] = await store.update(s.merchantInventoryItem).set({ quantity, revision: old.revision + 1, updatedAt: new Date() }).where(eq(s.merchantInventoryItem.id, itemId)).returning();
     const [movement] = await store.insert(s.merchantInventoryMovement).values({ venueId, itemId, delta, kind, reason, lotAllocations, reversesMovementId, ...inventoryActorFields(a) }).returning();
+    await recordMovementValuation(store,movement,valuation);
     return { item, movement };
 }

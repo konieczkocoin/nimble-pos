@@ -22,7 +22,7 @@ it('freezes uncertain production and retries the exact payload before allowing a
 });
 it('clears production history when the employee scope changes',async()=>{
  const row={id:'batch',recipe,outputItemId:'out',expectedYield:1,actualYield:1,waste:0,status:'PRODUCED',reason:'Alice batch',createdAt:'2026-10-17T04:00:00Z',requirements:[]};
- let alice=true;const request=vi.fn(async(_a:string,_m:string,p:string)=>p.includes('/recipes')?{items:[],hasMore:false}:{items:alice?[row]:[],hasMore:false});
+ let alice=true;const request=vi.fn(async(_a:string,_m:string,p:string)=>p.includes('/recipes')||p.includes('/drafts')?{items:[],hasMore:false}:{items:alice?[row]:[],hasMore:false});
  const props={api:{request} as never,venueId:'venue',items,onChanged:()=>{}};
  const view=render(<ProductionBoard {...props} scope="alice"/>);await screen.findByText(/Alice batch/);
  alice=false;view.rerender(<ProductionBoard {...props} scope="bob"/>);expect(screen.queryByText(/Alice batch/)).toBeNull();

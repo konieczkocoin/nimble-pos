@@ -52,3 +52,12 @@ Run the complete API suite on native PostgreSQL and record results. Confirm conc
 `.github/workflows/native-postgres.yml` provisions a disposable PostgreSQL16 service on an Ubuntu GitHub runner, installs the locked pnpm9.15.0 dependencies under Node22, verifies runner guards and executes the entire API suite with native backend-PID verification. It uses a dynamically assigned localhost port, a dedicated `nimble_native_test` database and no production secrets. Bash pipefail preserves failures while tee records the log; the log is retained as a14-day artifact tagged with the commit SHA.
 
 Triggers: pull requests, pushes to main or feat/merchant-management, and manual workflow_dispatch. The workflow is prepared locally, not pushed or executed remotely in this session. YAML parsing and structure checks passed; runner guards2/2 passed. A successful native CI run is still required to close PL-02.
+
+## Continuation: evidence header — 2026-10-19
+
+The existing workflow records the actual checkout SHA and Node/pnpm versions
+before dependency installation; native API output appends to that same log.
+Independent Spec/Standards reviews found no issues. Guard and backup tests9/9
+passed after locked installation. Full native execution still exits before API
+tests due to missing PostgreSQL configuration; PL-02/task01 remain blocked.
+Details and recovery: native-postgres-evidence-running.md.

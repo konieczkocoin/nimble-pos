@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   bigint,
   check,
   boolean,
@@ -470,6 +471,8 @@ export const merchantShift = pgTable(
 export const merchantOrder = pgTable(
   'merchant_order',
   {
+    paymentMethod:text('payment_method').$type<'CASH'|'CRYPTO'>(),
+    cashReceiptId:uuid('cash_receipt_id').references(():AnyPgColumn=>merchantCashReceipt.id),
     id: uuid('id').primaryKey().defaultRandom(),
     venueId: uuid('venue_id')
       .notNull()
@@ -846,7 +849,7 @@ export const merchantInventoryMovement=pgTable('merchant_inventory_movement',{
  lotAllocations:jsonb('lot_allocations').$type<import('@nimble/shared').LotDelta[]>().notNull().default([]),delta:integer('delta').notNull(),kind:text('kind').$type<'OPENING'|'ADJUSTMENT'|'REVERSAL'|'RECEIPT'|'RECEIPT_CORRECTION'|'STOCKTAKE'|'LOSS'|'SALE'|'PRODUCTION'|'PRODUCTION_REVERSAL'>().notNull(),reason:text('reason').notNull(),
  actorKind:text('actor_kind').$type<'owner'|'cashier'>().notNull(),actorId:uuid('actor_id').notNull(),actorName:text('actor_name').notNull(),
  reversesMovementId:uuid('reverses_movement_id'),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
-},t=>[uniqueIndex('merchant_inventory_reversal').on(t.reversesMovementId),index('merchant_inventory_history').on(t.itemId,t.createdAt)])
+},t=>[uniqueIndex('merchant_inventory_reversal').on(t.reversesMovementId),index('merchant_inventory_history').on(t.itemId,t.createdAt),index('merchant_inventory_movement_range').on(t.venueId,t.createdAt)])
 export const merchantInventoryRequest=pgTable('merchant_inventory_request',{
  id:uuid('id').primaryKey().defaultRandom(),venueId:uuid('venue_id').notNull().references(()=>merchantVenue.id),actor:text('actor').notNull(),key:uuid('key').notNull(),requestHash:text('request_hash').notNull(),response:jsonb('response').notNull(),
 },t=>[uniqueIndex('merchant_inventory_retry').on(t.venueId,t.actor,t.key)])
@@ -854,7 +857,7 @@ export const merchantInventoryRequest=pgTable('merchant_inventory_request',{
 // Operational documents retain snapshots and receipt history; COST stores mutable per-item valuation under the item lock.
 export const merchantStockOperation=pgTable('merchant_stock_operation',{
  id:uuid('id').primaryKey().defaultRandom(),venueId:uuid('venue_id').notNull().references(()=>merchantVenue.id),
- kind:text('kind').$type<'SUPPLIER'|'DELIVERY'|'STOCKTAKE'|'LOSS'|'SALE'|'DAY_CLOSE'|'RECIPE'|'COST'|'PRODUCTION'|'PURCHASE_ORDER'>().notNull(),data:jsonb('data').notNull(),
+ kind:text('kind').$type<'SUPPLIER'|'DELIVERY'|'STOCKTAKE'|'LOSS'|'SALE'|'DAY_CLOSE'|'RECIPE'|'COST'|'PRODUCTION'|'PURCHASE_ORDER'|'PRODUCTION_DRAFT'>().notNull(),data:jsonb('data').notNull(),
  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[index('merchant_stock_operations_venue').on(t.venueId,t.kind,t.createdAt)])
 export const merchantInventoryPolicy=pgTable('merchant_inventory_policy',{
@@ -961,3 +964,18 @@ export const merchantDepositResolution=pgTable('merchant_deposit_resolution',{
 export const merchantFinancialSale=pgTable('merchant_financial_sale',{
  orderId:uuid('order_id').primaryKey().references(()=>merchantOrder.id),venueId:uuid('venue_id').notNull().references(()=>merchantVenue.id),occurredAt:timestamp('occurred_at',{withTimezone:true}),data:jsonb('data').$type<import('@nimble/shared').FinancialSaleSnapshot>().notNull(),recordedAt:timestamp('recorded_at',{withTimezone:true}).notNull().defaultNow(),
 },t=>[index('merchant_financial_sale_range').on(t.venueId,t.occurredAt)])
+
+export const merchantInventoryValuation=pgTable('merchant_inventory_valuation',{
+ movementId:uuid('movement_id').primaryKey().references(()=>merchantInventoryMovement.id),
+ orderId:uuid('order_id').references(()=>merchantOrder.id),
+ venueId:uuid('venue_id').notNull().references(()=>merchantVenue.id),
+ data:jsonb('data').$type<import('@nimble/shared').InventoryMovementValuation>().notNull(),
+},t=>[index('merchant_inventory_valuation_order').on(t.orderId)]);
+
+export const merchantCashReceipt=pgTable('merchant_cash_receipt',{
+ id:uuid('id').primaryKey().defaultRandom(),orderId:uuid('order_id').notNull().unique().references(()=>merchantOrder.id),venueId:uuid('venue_id').notNull().references(()=>merchantVenue.id),shiftId:uuid('shift_id').notNull().references(()=>merchantShift.id),employeeId:uuid('employee_id').notNull().references(()=>merchantEmployee.id),currency:text('currency').$type<'EUR'|'PLN'|'USD'>().notNull(),dueMinor:integer('due_minor').notNull(),tenderedMinor:integer('tendered_minor').notNull(),changeMinor:integer('change_minor').notNull(),orderRevision:integer('order_revision').notNull(),paidSnapshot:jsonb('paid_snapshot').$type<import('@nimble/shared').MerchantPaidSnapshot>().notNull(),requestKey:text('request_key').notNull(),requestHash:text('request_hash').notNull(),recordedAt:timestamp('recorded_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[check('merchant_cash_receipt_amounts',sql`${t.dueMinor}>=0 AND ${t.tenderedMinor}>=${t.dueMinor} AND ${t.changeMinor}=${t.tenderedMinor}-${t.dueMinor}`),check('merchant_cash_receipt_currency',sql`${t.currency} IN ('EUR','PLN','USD')`),index('merchant_cash_receipt_range').on(t.venueId,t.recordedAt)]);
+
+export const merchantCashRefund=pgTable('merchant_cash_refund',{
+ id:uuid('id').primaryKey().defaultRandom(),orderId:uuid('order_id').notNull().unique().references(()=>merchantOrder.id),receiptId:uuid('receipt_id').notNull().unique().references(()=>merchantCashReceipt.id),venueId:uuid('venue_id').notNull().references(()=>merchantVenue.id),status:text('status').$type<'REQUESTED'|'CONFIRMED'>().notNull().default('REQUESTED'),reason:text('reason').notNull(),originalStatus:text('original_status').notNull(),requestedByKind:text('requested_by_kind').$type<'owner'|'cashier'>().notNull(),requestedById:uuid('requested_by_id').notNull(),requestedByName:text('requested_by_name').notNull(),requestedAt:timestamp('requested_at',{withTimezone:true}).notNull().defaultNow(),confirmedByOwnerId:uuid('confirmed_by_owner_id').references(()=>userProfile.id),confirmedAt:timestamp('confirmed_at',{withTimezone:true}),amountMinor:integer('amount_minor').notNull(),currency:text('currency').$type<'EUR'|'PLN'|'USD'>().notNull(),payoutShiftId:uuid('payout_shift_id').references(()=>merchantShift.id),
+},t=>[check('merchant_cash_refund_state',sql`(${t.status}='REQUESTED' AND ${t.confirmedAt} IS NULL AND ${t.confirmedByOwnerId} IS NULL) OR (${t.status}='CONFIRMED' AND ${t.confirmedAt} IS NOT NULL AND ${t.confirmedByOwnerId} IS NOT NULL)`),check('merchant_cash_refund_values',sql`${t.amountMinor}>=0 AND ${t.currency} IN ('EUR','PLN','USD') AND length(${t.reason}) BETWEEN 1 AND 500 AND ${t.originalStatus} IN ('PREPARING','READY','COLLECTED') AND ${t.requestedByKind} IN ('owner','cashier') AND ${t.payoutShiftId} IS NULL`),index('merchant_cash_refund_range').on(t.venueId,t.confirmedAt)]);

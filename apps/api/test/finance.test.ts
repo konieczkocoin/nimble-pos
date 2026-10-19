@@ -22,11 +22,13 @@ it('reads one coherent owner report and preserves the discounted sale after a st
  const item=(await f.call('GET','/inventory')).json().items[0];expect((await f.call('PATCH',`/inventory/${item.id}`,{name:item.name,tracked:true,available:false,threshold:0,revision:item.revision,reason:'Ingredient safety hold'})).statusCode).toBe(200);
  expect((await f.call('POST',`/inventory/availability-impact/orders/${paid.id}/refund`,{reason:'Cannot finish this order',idempotencyKey:key()})).statusCode).toBe(200);
  const pending=(await f.report()).json();expect(pending.fiat[0]).toMatchObject({salesMinor:'900',refundedSalesMinor:'0',netSalesMinor:'900'});expect(pending.assets[0].refundLiabilityAtomic).toBe('900000');
+ const pendingOperations=await f.call('GET','/operations');expect(pendingOperations.statusCode).toBe(200);expect(pendingOperations.json().acceptedSalesMinor).toBe('900');
  const approved=(await app.inject({method:'POST',url:`/v1/merchant/orders/${paid.id}/refund/approve`,headers:f.headers})).json();expect(approved.refund.quote.amountAtomic).toBe('900000');
  const refunded=await app.inject({method:'POST',url:`/v1/merchant/orders/${paid.id}/refund/payment`,headers:f.headers,payload:{hash:'f'.repeat(64),quoteId:approved.refund.quote.id}});expect(refunded.statusCode).toBe(200);
  const final=(await f.report()).json();expect(final.fiat[0]).toMatchObject({salesMinor:'900',discountMinor:'100',refundedSalesMinor:'900',netSalesMinor:'0'});expect(final.assets[0]).toMatchObject({receivedAtomic:'900000',submittedRefundsAtomic:'900000',confirmedRefundsAtomic:'900000',refundLiabilityAtomic:'0',netCashAtomic:'0'});
  expect(final.entries.filter((e:any)=>e.kind==='SALE')).toHaveLength(1);expect(final.entries.every((e:any)=>!('lines' in e)&&!('checkoutToken' in e)&&!('sender' in e))).toBe(true);
  const overview=(await f.call('GET','/report')).json();expect(overview.totals).toMatchObject({grossMinor:900,refundedMinor:900,netMinor:0});
+ expect((await f.call('GET','/operations')).json().acceptedSalesMinor).toBe('900');
  const cutoff=(await f.call('GET','/day-closes/preview?'+new URLSearchParams({date:f.from.slice(0,10),timeZone:'UTC',boundaryHour:'0'}))).json();expect(cutoff.snapshot.sales).toEqual([{currency:'EUR',totalMinor:'900',count:1}]);
  const sale=(await db.select().from(s.merchantFinancialSale).where(eq(s.merchantFinancialSale.orderId,paid.id)))[0];expect(sale.data.discountMinor).toBe('100');
 });
@@ -44,6 +46,8 @@ it('backfills proven historical acceptance without fabricating acceptance for am
  const f=await setup(),known=await f.pay(100),uncertain=await f.pay();
  await db.delete(s.merchantFinancialSale).where(eq(s.merchantFinancialSale.venueId,known.venueId));
  await db.delete(s.merchantStockReservation).where(eq(s.merchantStockReservation.orderId,uncertain.id));
+ // Simulate the pre-valuation historical database, without leaving dependent new evidence.
+ await db.delete(s.merchantInventoryValuation).where(sql`${s.merchantInventoryValuation.movementId} in (select ${s.merchantInventoryMovement.id} from ${s.merchantInventoryMovement} where ${s.merchantInventoryMovement.itemId}=${f.item.id} and ${s.merchantInventoryMovement.reason}=${'POS order '+uncertain.id})`);
  await db.delete(s.merchantInventoryMovement).where(and(eq(s.merchantInventoryMovement.itemId,f.item.id),eq(s.merchantInventoryMovement.reason,'POS order '+uncertain.id)));
  await db.update(s.merchantOrder).set({paymentRequiresRefund:true,cancelledAt:new Date(Date.parse(uncertain.payment.confirmedAt)+100)}).where(eq(s.merchantOrder.id,uncertain.id));
  const migration=await readFile(new URL('../drizzle/0040_financial_sales.sql',import.meta.url),'utf8'),statement=migration.split('--> statement-breakpoint').find(part=>part.includes('WITH facts AS'))!;

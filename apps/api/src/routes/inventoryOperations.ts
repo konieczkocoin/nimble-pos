@@ -7,6 +7,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Db } from '../db/client';
 import * as s from '../db/schema';
 import { loyaltyFail as fail } from '../services/loyalty';
+import type {UnitCost} from '../services/inventoryCost';
 import { inventoryItem, inventoryRetry, inventoryMove } from '../services/inventory';
 import { taskActorKey, type MerchantActor, type MerchantTaskHelpers } from './tasks';
 import { foodOperationalDate, InventorySupplierInput, InventoryDeliveryInput, InventoryReceiptInput, InventoryReceiptReverseInput, InventoryStocktakeInput, InventoryStocktakeFinalizeInput, InventoryLossInput, InventoryLossDecisionInput, InventoryLossPolicyInput, type InventorySupplier, type InventoryDelivery, type InventoryStocktake, type InventoryLoss, type TaskTemplateInput } from '@nimble/shared';
@@ -90,19 +91,24 @@ export async function inventoryOperationRoutes(app: FastifyInstance, h: Merchant
             return value;
         });
     });
+    async function deliveryUnitCosts(store:Db,d:InventoryDelivery){
+        const [venue]=await store.select({currency:s.merchantVenue.fiatCurrency}).from(s.merchantVenue).where(eq(s.merchantVenue.id,d.venueId));
+        return new Map<string,UnitCost>(d.lines.map(line=>[line.itemId,d.fiatCurrency!==venue.currency?null:line.totalCostMinor!=null?{numerator:String(line.totalCostMinor),denominator:String(line.expectedQuantity)}:line.unitCostMinor??null]));
+    }
     function deliveryStatus(d: InventoryDelivery) { d.status = d.lines.every(l => l.receivedQuantity === l.expectedQuantity) ? 'RECEIVED' : d.lines.some(l => l.receivedQuantity > 0) ? 'PARTIAL' : 'OPEN'; }
     app.post(`${base}/deliveries/:deliveryId/receipts`, async (req) => {
         const { a, venueId } = await context(req, true), input = InventoryReceiptInput.parse(req.body);
         unique(input.lines.map(l => l.itemId));
         return transaction(a, venueId, input.idempotencyKey, { action: 'receipt', id: params(req).deliveryId, input }, async (store) => {
             const d = await get<InventoryDelivery>(store, venueId, params(req).deliveryId, 'DELIVERY', true), lines = [];
+            const unitCosts=await deliveryUnitCosts(store,d);
             for (const line of [...input.lines].sort((a, b) => a.itemId.localeCompare(b.itemId))) {
                 const dl = d.lines.find(l => l.itemId === line.itemId);
                 if (!dl)
                     fail(400, 'DELIVERY_ITEM_MISMATCH');
                 if (dl!.receivedQuantity + line.quantity > dl!.expectedQuantity)
                     fail(409, 'OVER_RECEIPT');
-                const moved = await inventoryMove(store, a, venueId, line.itemId, line.quantity, 'RECEIPT', input.reason, null, 0, dl!.totalCostMinor!=null?{numerator:String(dl!.totalCostMinor),denominator:String(dl!.expectedQuantity)}:dl!.unitCostMinor??null,{incoming:{...line.lot,source:'RECEIPT',sourceId:d.id}});
+                const moved = await inventoryMove(store, a, venueId, line.itemId, line.quantity, 'RECEIPT', input.reason, null, 0, unitCosts.get(line.itemId)??null,{incoming:{...line.lot,source:'RECEIPT',sourceId:d.id}});
                 dl!.receivedQuantity += line.quantity;
                 lines.push({ ...line, movementId: moved.movement.id, lotAllocations:moved.movement.lotAllocations });
             }
@@ -126,8 +132,9 @@ export async function inventoryOperationRoutes(app: FastifyInstance, h: Merchant
                 if (receipt.lines.reduce((n, l) => n + l.quantity, 0) > (policy?.approvalThreshold ?? 0))
                     fail(409, 'LOSS_APPROVAL_REQUIRED');
             }
+            const unitCosts=await deliveryUnitCosts(store,d);
             for (const line of [...receipt.lines].sort((a, b) => a.itemId.localeCompare(b.itemId))) {
-                const { movement } = await inventoryMove(store, a, venueId, line.itemId, -line.quantity, 'RECEIPT_CORRECTION', input.reason, null, 0, d.lines.find(l=>l.itemId===line.itemId)?.totalCostMinor!=null?{numerator:String(d.lines.find(l=>l.itemId===line.itemId)!.totalCostMinor),denominator:String(d.lines.find(l=>l.itemId===line.itemId)!.expectedQuantity)}:d.lines.find(l=>l.itemId===line.itemId)?.unitCostMinor??null,{deltas:line.lotAllocations?.map(l=>({lotId:l.lotId,delta:-l.delta}))});
+                const { movement } = await inventoryMove(store, a, venueId, line.itemId, -line.quantity, 'RECEIPT_CORRECTION', input.reason, null, 0, unitCosts.get(line.itemId)??null,{deltas:line.lotAllocations?.map(l=>({lotId:l.lotId,delta:-l.delta}))});
                 await store.update(s.merchantInventoryMovement).set({ reversesMovementId: line.movementId }).where(eq(s.merchantInventoryMovement.id, movement.id));
                 d.lines.find(l => l.itemId === line.itemId)!.receivedQuantity -= line.quantity;
             }

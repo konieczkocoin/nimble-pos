@@ -1,0 +1,22 @@
+import {afterEach,expect,it,vi} from 'vitest';
+import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {ProductionBoard} from '../src/merchant/ProductionBoard';
+import {ProductionProposalPanel} from '../src/merchant/ProductionProposalPanel';
+import type {ProductionProposal} from '@nimble/shared';
+afterEach(cleanup);
+const recipe={id:'recipe',recipeId:'family',version:1,name:'Batch',requirements:[{itemId:'raw',quantity:2}],ingredients:[],ancestorRecipeIds:[],costMethod:'WEIGHTED_AVERAGE',costMinor:null};
+const items=[{id:'raw',name:'Raw cake',unit:'PORTION',quantity:20},{id:'out',name:'Prepared cake',unit:'PORTION',quantity:2}] as any;
+const proposal:ProductionProposal={minimumSamples:3,minimumActiveDays:3,from:'2026-10-01T00:00:00Z',until:'2026-10-08T00:00:00Z',generatedAt:'2026-10-18T10:00:00Z',windowDays:7,horizonDays:3,includeLosses:false,recipeVersionId:'recipe',recipeName:'Batch',recipeVersion:1,output:{itemId:'out',name:'Prepared cake',unit:'PORTION',sampleCount:3,activeDays:3,usageQuantity:'18',returnedProductionQuantity:'0',netUsageQuantity:'18',lossQuantity:'0',projectedUsageQuantity:'8',projectedLossQuantity:'0',physicalQuantity:2,reservedQuantity:0,pendingLossQuantity:0,availableQuantity:2,incomingQuantity:'0',bufferQuantity:3,targetQuantity:'11',recommendedQuantity:9,reason:null},expectedYieldPerBatch:4,neededQuantity:9,plannedBatches:3,plannedYield:12,maxFeasibleBatches:10,outputCapacityQuantity:2147483645,reason:null,ingredients:[{itemId:'raw',name:'Raw cake',unit:'PORTION',tracked:true,available:true,perBatch:2,requiredQuantity:6,physicalQuantity:20,reservedQuantity:0,pendingLossQuantity:0,availableQuantity:20,shortageQuantity:0}]};
+it('copies only planning fields, clears actual yield and performs no production write',async()=>{
+ const request=vi.fn(async(_auth:string,method:string,path:string)=>{if(method!=='GET')throw new Error('Unexpected production write');return path.includes('/proposal?')?proposal:path.includes('/recipes')?{items:[recipe],hasMore:false}:{items:[],hasMore:false}});
+ render(<ProductionBoard api={{request} as never} venueId="venue" scope="owner" owner items={items} onChanged={()=>{}}/>);await screen.findByRole('option',{name:'Batch · v1'});
+ fireEvent.change(screen.getByLabelText('Production recipe'),{target:{value:'recipe'}});fireEvent.change(screen.getByLabelText('Finished stock item'),{target:{value:'out'}});fireEvent.change(screen.getByLabelText('Expected yield per batch'),{target:{value:'4'}});
+ fireEvent.click(screen.getByRole('button',{name:'Calculate production proposal'}));await screen.findByText('Maximum feasible batches now');fireEvent.click(screen.getByRole('button',{name:'Copy proposal to production form'}));
+ expect((screen.getByLabelText('Number of batches') as HTMLInputElement).value).toBe('3');expect((screen.getByLabelText('Actual finished quantity') as HTMLInputElement).value).toBe('');expect((screen.getByLabelText('Expected yield per batch') as HTMLInputElement).value).toBe('4');expect(request.mock.calls.every(c=>c[1]==='GET')).toBe(true);
+});
+it('discards old account and recipe responses and blocks an infeasible proposal',async()=>{
+ let finish!:(p:ProductionProposal)=>void;const request=vi.fn(()=>new Promise<ProductionProposal>(resolve=>finish=resolve)),props={api:{request} as never,venueId:'venue',auth:'owner' as const,recipeVersionId:'recipe',outputItemId:'out',expectedYieldPerBatch:'4',disabled:false,onUse:vi.fn()};
+ const view=render(<ProductionProposalPanel {...props} scope="alice"/>);fireEvent.click(screen.getByRole('button',{name:'Calculate production proposal'}));view.rerender(<ProductionProposalPanel {...props} scope="bob"/>);await act(async()=>finish(proposal));expect(screen.queryByText('Maximum feasible batches now')).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'Calculate production proposal'}));view.rerender(<ProductionProposalPanel {...props} scope="bob" recipeVersionId="new"/>);await act(async()=>finish(proposal));expect(screen.queryByText('Maximum feasible batches now')).toBeNull();
+ view.rerender(<ProductionProposalPanel {...props} scope="bob"/>);fireEvent.click(screen.getByRole('button',{name:'Calculate production proposal'}));await act(async()=>finish({...proposal,reason:'INGREDIENT_SHORTAGE',maxFeasibleBatches:1}));await waitFor(()=>expect(screen.getByRole('button',{name:'Copy proposal to production form'}).hasAttribute('disabled')).toBe(true));expect(props.onUse).not.toHaveBeenCalled();
+});

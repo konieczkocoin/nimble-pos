@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:full-day": "node ../scripts/test-full-day.mjs",
+    "typecheck:full-day": "tsc -p tsconfig.full-day.json --noEmit"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",

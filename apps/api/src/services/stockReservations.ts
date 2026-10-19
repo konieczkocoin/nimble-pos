@@ -1,3 +1,4 @@
+import {movementValuation,recordMovementValuation} from './inventoryValuation';
 import {recordFinancialSale} from './financialSale';
 import {moveLots} from './inventoryLots';
 import {updateInventoryCost} from './inventoryCost';
@@ -108,14 +109,16 @@ export async function stockReservationView(store: Db, o: Order) {
         expiresAt: string | null;
     };
 }
-async function sale(store: Db, venueId: string, item: typeof s.merchantInventoryItem.$inferSelect, quantity: number, actorId: string, actorName: string, reference: string) {
+async function sale(store: Db, venueId: string, item: typeof s.merchantInventoryItem.$inferSelect, quantity: number, actorId: string, actorName: string, reference: string, orderId:string|null=null) {
     const availability = await stockAvailability(store, item);
     if (availability.availableQuantity < quantity)
         fail(409, 'INSUFFICIENT_STOCK');
     const lotAllocations=await moveLots(store,item,-quantity,'SALE');
+    const valuation=await movementValuation(store,item,-quantity,null,'SALE');
     await updateInventoryCost(store,item,-quantity);
     await store.update(s.merchantInventoryItem).set({ quantity: item.quantity - quantity, revision: item.revision + 1, updatedAt: new Date() }).where(eq(s.merchantInventoryItem.id, item.id));
-    await store.insert(s.merchantInventoryMovement).values({ venueId, itemId: item.id, delta: -quantity, lotAllocations, kind: 'SALE', reason: reference, actorKind: 'cashier', actorId, actorName });
+    const [movement]=await store.insert(s.merchantInventoryMovement).values({ venueId, itemId: item.id, delta: -quantity, lotAllocations, kind: 'SALE', reason: reference, actorKind: 'cashier', actorId, actorName }).returning();
+    await recordMovementValuation(store,movement,valuation,orderId);
 }
 export async function consumeOrderStock(store: Db, o: Order, quoteId: string) {
     await recordFinancialSale(store,o.id);
@@ -141,7 +144,20 @@ export async function consumeOrderStock(store: Db, o: Order, quoteId: string) {
     if (!employee)
         fail(409, 'INVALID_STATE');
     for (const { item, quantity } of locked)
-        await sale(store, o.venueId, item, quantity, employee.id, employee.name, `${o.source === 'REMOTE' ? 'Remote' : 'POS'} order ${o.id}`);
+        await sale(store, o.venueId, item, quantity, employee.id, employee.name, `${o.source === 'REMOTE' ? 'Remote' : 'POS'} order ${o.id}`,o.id);
+}
+/** Cash has no quote/hold: caller locked its shift/order and stored an authentic receipt. */
+export async function consumeCashOrderStock(store:Db,o:Order){
+ if(!o.cashReceiptId||o.paymentMethod!=='CASH')return fail(409,'INVALID_STATE');
+ const requirements=aggregateMerchantStockRequirements(o.paymentSnapshot?.lines??o.lines);
+ const locked=await lockItems(store,o.venueId,requirements);
+ const [employee]=await store.select().from(s.merchantEmployee).where(and(eq(s.merchantEmployee.id,o.employeeId!),eq(s.merchantEmployee.venueId,o.venueId)));
+ if(!employee)return fail(409,'INVALID_STATE');
+ for(const {item,quantity} of locked){
+  if(!item.available)return fail(409,'INSUFFICIENT_STOCK');
+  if(item.tracked)await sale(store,o.venueId,item,quantity,employee.id,employee.name,`Cash order ${o.id}`,o.id);
+ }
+ await recordFinancialSale(store,o.id);
 }
 export async function consumeRewardStock(store: Db, args: {
     venueId: string;

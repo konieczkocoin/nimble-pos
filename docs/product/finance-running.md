@@ -8,6 +8,13 @@ Migracja0040 dodaje niezmienny zapis sprzedaży w tej samej transakcji co jej pr
 
 Podsumowanie właściciela i nowy snapshot zamknięcia dnia korzystają z tego dowodu sprzedaży zamiast bieżącego statusu zamówienia. Zamknięcie dnia nadal obejmuje operacyjną grupę zamówień utworzonych w danym dniu, a raport finansowy zdarzenia przyjęcia sprzedaży w wybranym okresie. Poprzednio zapisane, niezmienne zamknięcia nie są przepisywane.
 
+Dashboard lokalu również sumuje zapisane przyjęcia sprzedaży w swoim ruchomym
+oknie 24 godzin. Późniejsza odmowa realizacji i potwierdzony zwrot nie usuwają
+przyjętej sprzedaży z tego licznika. To sprzedaż brutto po rabacie, nie wynik netto
+po zwrotach; przepływy i zwroty pozostają oddzielnymi metrykami. Zamówienie
+odrzucone przed akceptacją nie tworzy sprzedaży. Wartość UNRESOLVED nie jest
+włączana do sumy potwierdzonej sprzedaży.
+
 Migracja opiera historyczne przyjęcie na utrwalonej decyzji remote, stanie przyjętej płatności POS albo dowodzie rozchodu. Gdy dokładny czas przyjęcia POS nie jest znany, używa jawnie oznaczonego czasu potwierdzenia historycznej wpłaty. Niejednoznaczne przypadki mają UNRESOLVED i brak daty przyjęcia; nie stają się fikcyjną sprzedażą ani ceną0. Czas zgłoszenia starego zwrotu odtwarzamy tylko z rzeczywistego audytu, nigdy z czasu migracji lub retry.
 
 ## Przepływy i zobowiązania

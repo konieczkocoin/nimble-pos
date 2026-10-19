@@ -1,3 +1,4 @@
+import {t} from '../i18n';
 import type { MerchantAsset, MerchantFiat, MerchantOrder, MerchantReport } from './contract';
 export const money = (minor: number, currency: MerchantFiat = 'EUR') => new Intl.NumberFormat('en', { style: 'currency', currency }).format(minor / 100);
 export function cryptoAmount(atomic: string, asset: MerchantAsset): string {
@@ -24,5 +25,7 @@ export function demoReport(orders: MerchantOrder[], fiatCurrency: MerchantFiat):
 
 /** All paid views must show the immutable basket the verified transfer bought. */
 export function paidOrderSummary(order: MerchantOrder): MerchantOrder {
-  return order.payment && order.paidSnapshot ? { ...order, lines: order.paidSnapshot.lines, totalMinor: order.paidSnapshot.totalMinor } : order
+  return (order.payment || order.cashReceipt) && order.paidSnapshot ? { ...order, lines: order.paidSnapshot.lines, totalMinor: order.paidSnapshot.totalMinor } : order
 }
+
+export function minorText(value:string|null,currency:string){if(value===null)return t('Unknown');const n=BigInt(value),abs=n<0n?-n:n;return `${n<0n?'-':''}${(abs/100n).toLocaleString('en')}.${(abs%100n).toString().padStart(2,'0')} ${currency}`}

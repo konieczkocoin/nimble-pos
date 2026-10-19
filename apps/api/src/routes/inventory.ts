@@ -37,6 +37,8 @@ export async function inventoryRoutes(app: FastifyInstance, h: MerchantTaskHelpe
     app.post(base, async (req, reply) => {
         const { a, venueId } = await context(req, true), input = InventoryCreateInput.parse(req.body);
         const result = await db.transaction(async (tx) => retry(tx as unknown as Db, a, venueId, input.idempotencyKey, { action: "create", input }, async () => {
+            // Serialize the first inventory item against a venue currency change.
+            await tx.select({id:s.merchantVenue.id}).from(s.merchantVenue).where(eq(s.merchantVenue.id,venueId)).for('update');
             const [i] = await tx.insert(s.merchantInventoryItem).values({ venueId, name: input.name, unit: input.unit, tracked: input.tracked, available: input.available??true, barcode: input.barcode ?? null, quantity: input.openingQuantity, threshold: input.threshold }).returning();
             const lotAllocations=await moveLots(tx as unknown as Db,{...i,quantity:0},input.openingQuantity,'OPENING');
             await tx.insert(s.merchantInventoryMovement).values({ venueId, itemId: i.id, lotAllocations, delta: input.openingQuantity, kind: "OPENING", reason: input.reason, ...actorFields(a) });
@@ -66,6 +68,16 @@ export async function inventoryRoutes(app: FastifyInstance, h: MerchantTaskHelpe
         const reversedBy = new Map(reversals.map(row=>[row.originalId,row.id]));
         const movements = pageRows.map(row=>({...movementView(row),reversedByMovementId:reversedBy.get(row.id)??null}));
         return { movements, hasMore: rows.length > limit };
+    });
+    app.get(`${base}/:itemId/cost-history`, async (req) => {
+        const {a,venueId}=await context(req);
+        if(a.kind!=='owner'&&!a.permissions?.includes('inventory.costs'))fail(403,'FORBIDDEN');
+        const {page,limit}=paging(req),i=await item(db,venueId,params(req).itemId);
+        const rows=await db.select({movement:s.merchantInventoryMovement,valuation:s.merchantInventoryValuation.data})
+            .from(s.merchantInventoryMovement).leftJoin(s.merchantInventoryValuation,and(eq(s.merchantInventoryValuation.movementId,s.merchantInventoryMovement.id),eq(s.merchantInventoryValuation.venueId,venueId)))
+            .where(and(eq(s.merchantInventoryMovement.venueId,venueId),eq(s.merchantInventoryMovement.itemId,i.id)))
+            .orderBy(asc(s.merchantInventoryMovement.createdAt),asc(s.merchantInventoryMovement.id)).offset(page*limit).limit(limit+1);
+        return {items:rows.slice(0,limit).map(({movement:m,valuation})=>({movementId:m.id,kind:m.kind,delta:m.delta,createdAt:m.createdAt.toISOString(),valuation})),hasMore:rows.length>limit};
     });
     async function mutate(req: FastifyRequest, reverse: boolean) {
         const { a, venueId } = await context(req, true), input = reverse ? InventoryReverseInput.parse(req.body) : InventoryMovementInput.parse(req.body);

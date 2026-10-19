@@ -113,6 +113,7 @@ export interface MerchantOrderLine extends MerchantCartLine {
   components?: (MerchantComponent & { productName: string; variantName: string })[]
   choiceGroups?: { id: string; name: string; extraIds: string[] }[]
   productName: string
+  category?: string
   variantName: string
   extras: {
     id: string
@@ -153,6 +154,10 @@ export interface MerchantPaidSnapshot {
   totalMinor: number
 }
 export interface MerchantOrder {
+  cashPaymentAvailable?:boolean
+  paymentMethod?:'CASH'|'CRYPTO'
+  cashReceipt?:import('./cash').CashReceiptSummary|null
+  cashRefund?:import('./cash').CashRefundSummary|null
   discountMinor?: number
   stockReservation?: { status: 'NONE' | 'HELD' | 'EXPIRED' | 'RELEASED' | 'CONSUMED'; expiresAt: string | null }
   id: string
@@ -191,6 +196,9 @@ export interface MerchantOrder {
 export interface MerchantReport {
   orders: MerchantOrder[]
   totals: {
+    ownerCashPayouts?:import('./finance').OwnerCashPayoutTotal[]
+    cash?:import('./finance').CashReportTotal[]
+    salesByPaymentMethod?:import('./finance').SalePaymentMethodTotal[]
     count: number
     paid: number
     refunded: number
@@ -355,6 +363,7 @@ export function priceMerchantCart(
         })),
       } : {}),
       productName: product.name,
+      category: product.category,
       variantName: variant.name,
       extras,
       unitPriceMinor,

@@ -1,3 +1,6 @@
+import {CashRefundBoard,CashRefundControl} from './CashRefundPanel'
+import {CashPaymentPanel} from './CashPaymentPanel'
+import {EconomicsBoard} from './EconomicsBoard'
 import {FinanceBoard} from './FinanceBoard'
 import { DayCloseBoard } from './DayCloseBoard'
 import { WorkTimeBoard } from './WorkTimeBoard'
@@ -534,6 +537,7 @@ function Owner({
             else setTab(section);
           }}/>}
 
+          {!demo&&<CashRefundBoard api={api} orders={orders} scope={ownerScope} actorId={app.address??venue.id} onChanged={()=>void load().catch(e=>setNotice(merchantError(e)))}/>}
           <section className="m-panel">
             <h2 id="owner-refund-approvals">{t('Refund approvals')}</h2>
             <p className="m-muted">
@@ -629,7 +633,7 @@ function Owner({
           </section>
         </>
       ) : tab === 'Financial reconciliation' ? (
-        demo ? <p>{t('Financial reconciliation requires a connected venue.')}</p> : <FinanceBoard api={api} venueId={venue.id} scope={ownerScope}/>
+        demo ? <p>{t('Financial reconciliation requires a connected venue.')}</p> : <><FinanceBoard api={api} venueId={venue.id} scope={ownerScope}/><EconomicsBoard api={api} venueId={venue.id} scope={ownerScope}/></>
       ) : tab === 'Payments' ? (
         demo ? <p>{t('Payment exception decisions require a connected venue.')}</p> : <PaymentExceptions api={api} venueId={venue.id} scope={ownerScope} onRefunds={() => {setTab('Overview'); setTimeout(() => document.getElementById('owner-refund-approvals')?.scrollIntoView({behavior:'smooth'}), 0)}}/>
       ) : tab === 'Remote orders' ? (
@@ -1031,10 +1035,12 @@ function Terminal({
   const [cart, setCart] = useState<MerchantCartLine[]>([])
   const [selected, setSelected] = useState<MerchantProduct | null>(null)
   const [shared, setShared] = useState<MerchantOrder | null>(null)
+  const activeShared = shared ? orders.find(o=>o.id===shared.id && o.revision>=shared.revision) ?? shared : null
   const [editing, setEditing] = useState<MerchantOrder | null>(null)
   const [code, setCode] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [cashBusy,setCashBusy] = useState(false)
   const [verifiedAuthority,setVerifiedAuthority] = useState<string|null>(demo ? session?.token ?? null : null)
   const authority = useRef(session?.token)
   authority.current = session?.token
@@ -1066,6 +1072,22 @@ function Terminal({
     return () => {active=false;clearInterval(timer)}
   },[api,demo,session?.token,prefix])
   const key = useRef(uuid())
+  useEffect(() => {
+    if (demo) return
+    // Shared-terminal data belongs to the signed-in cashier, even while the next load is pending.
+    setProducts([])
+    setOrders([])
+    setShift(null)
+    setReport(null)
+    setCart([])
+    setSelected(null)
+    setShared(null)
+    setEditing(null)
+    setCode('')
+    setRates({NIM:null,USDT:null})
+    setCategory('All')
+    key.current=uuid()
+  },[demo,session?.token])
   const loadProfiles = async () => {
     if (demo) {
       setProfiles([...demo.employees])
@@ -1105,18 +1127,26 @@ function Terminal({
     if (s) { const result = await api.report(s.id,true); if(authority.current === token)setReport(result) }
   }, [api, demo, session?.token])
   useEffect(() => {
+    let active = true
+    const token = session?.token
     if (!session)
       void loadProfiles().catch((e) => {
-        if (localStorage.getItem(`${prefix}terminal`))
+        if (active && localStorage.getItem(`${prefix}terminal`))
           setNotice(merchantError(e))
       })
-    else void load().catch((e) => setNotice(merchantError(e)))
+    else void load().catch((e) => {
+      if (active && authority.current === token) setNotice(merchantError(e))
+    })
+    return () => {active=false}
   }, [load, version, session?.token])
   useEffect(() => {
     if (demo || !session) return
+    let active = true
+    const token = session.token
     const timer = setInterval(
       () =>
         void load().catch((e) => {
+          if (!active || authority.current !== token) return
           setNotice(merchantError(e))
           if (e.status === 401) {
             sessionStorage.removeItem(`${prefix}cashier`)
@@ -1125,7 +1155,7 @@ function Terminal({
         }),
       3000,
     )
-    return () => clearInterval(timer)
+    return () => {active=false;clearInterval(timer)}
   }, [load, demo, session?.token, prefix])
   useEffect(() => {
     if (demo || !session) return
@@ -1598,34 +1628,34 @@ function Terminal({
               </small>
             </section>
           </div>
-          {shared && (
+          {activeShared && (
             <section className="m-panel m-share">
               <div>
-                <span className="m-label">ORDER #{number(shared)}</span>
+                <span className="m-label">ORDER #{number(activeShared)}</span>
                 <h2>
                   A moment for
                   <br />
                   your customer.
                 </h2>
                 <Lines
-                  order={orders.find((o) => o.id === shared.id) ?? shared}
+                  order={orders.find((o) => o.id === activeShared.id) ?? activeShared}
                 />
-                <p className="m-muted">
+                {!cashBusy && !activeShared.cashReceipt && <p className="m-muted">
                   Customer scans the QR or shows their six-digit Nimble payment
                   code.
-                </p>
+                </p>}
                 {demo ? (
                   <button
                     className="m-primary"
-                    onClick={() => onCustomer?.(shared.id)}
+                    onClick={() => onCustomer?.(activeShared.id)}
                   >
                     Open customer view →
                   </button>
-                ) : (
+                ) : !cashBusy && !activeShared.cashReceipt ? (
                   <>
                     <Link
                       className="m-primary"
-                      to={`/merchant/checkout/${shared.checkoutToken}`}
+                      to={`/merchant/checkout/${activeShared.checkoutToken}`}
                     >
                       Open customer checkout ↗
                     </Link>
@@ -1634,7 +1664,7 @@ function Terminal({
                       onSubmit={(e) => {
                         e.preventDefault()
                         void run(
-                          () => api.claim(shared.id, code),
+                          () => api.claim(activeShared.id, code),
                           'Code paired. The customer can review this order.',
                         )
                       }}
@@ -1653,15 +1683,16 @@ function Terminal({
                       <button disabled={busy}>Pair code →</button>
                     </form>
                   </>
-                )}
+                ) : null}
+                {!demo && activeShared.source === 'COUNTER' && session?.employee && <CashPaymentPanel api={api} order={activeShared} scope={session.token} cashierId={session.employee.id} disabled={busy||!shift} onBusy={setCashBusy} onRecorded={next=>{setShared(next);void load().catch(e=>setNotice(merchantError(e)))}}/>}
                 <div className="m-actions">
                   <button
                     onClick={() => {
                       setEditing(
-                        orders.find((o) => o.id === shared.id) ?? shared,
+                        orders.find((o) => o.id === activeShared.id) ?? activeShared,
                       )
                       setCart(
-                        shared.lines.map((l) => ({
+                        activeShared.lines.map((l) => ({
                           productId: l.productId,
                           variantId: l.variantId,
                           extraIds: l.extraIds,
@@ -1670,16 +1701,16 @@ function Terminal({
                       )
                       setShared(null)
                     }}
-                    disabled={shared.status !== 'AWAITING_PAYMENT'}
+                    disabled={cashBusy||activeShared.status !== 'AWAITING_PAYMENT'}
                   >
                     Edit basket
                   </button>
-                  <button onClick={() => setShared(null)}>Back to menu</button>
+                  <button disabled={cashBusy} onClick={() => setShared(null)}>Back to menu</button>
                 </div>
               </div>
-              <div className="m-centered">
+              {!cashBusy && !activeShared.cashReceipt && <div className="m-centered">
                 <QR
-                  url={`${window.location.origin}${demo ? '/merchant/demo' : `/merchant/checkout/${shared.checkoutToken}`}`}
+                  url={`${window.location.origin}${demo ? '/merchant/demo' : `/merchant/checkout/${activeShared.checkoutToken}`}`}
                 />
                 <small>
                   {demo
@@ -1690,7 +1721,7 @@ function Terminal({
                   <button
                     onClick={() =>
                       void copyText(
-                        `${window.location.origin}/merchant/checkout/${shared.checkoutToken}`,
+                        `${window.location.origin}/merchant/checkout/${activeShared.checkoutToken}`,
                       ).then((ok) =>
                         setNotice(
                           ok
@@ -1703,7 +1734,7 @@ function Terminal({
                     Copy checkout link
                   </button>
                 )}
-              </div>
+              </div>}
             </section>
           )}
         </>
@@ -1735,6 +1766,7 @@ function Terminal({
                   )}
                 </div>
                 <div className="m-actions">
+                  {o.cashReceipt && <button onClick={()=>{setShared(o);setTab('Sale')}}>{t('Check cash receipt')}</button>}
                   {o.status === 'AWAITING_PAYMENT' && (
                     <>
                       <button
@@ -1795,7 +1827,8 @@ function Terminal({
                       Mark collected ✓
                     </button>
                   )}
-                  {['PREPARING', 'READY', 'COLLECTED'].includes(o.status) && (
+                  {!demo&&o.cashReceipt&&<CashRefundControl api={api} order={o} scope={session.token} actorId={session.employee.id} authority="cashier" disabled={busy||!shift} onChanged={()=>void load().catch(e=>setNotice(merchantError(e)))}/>}
+                  {!o.cashReceipt && ['PREPARING', 'READY', 'COLLECTED'].includes(o.status) && (
                     <button
                       disabled={busy}
                       onClick={() =>
@@ -2145,7 +2178,7 @@ function Customer({
     void poll()
     return () => { active = false; loadGeneration.current++; clearTimeout(timer) }
   }, [load, demo, version, pendingKey])
-  const loyalty = useCheckoutLoyalty({merchant: api, order, checkoutToken, demo, disabled: Boolean(order?.quote || order?.payment || order?.pendingPaymentHash)})
+  const loyalty = useCheckoutLoyalty({merchant: api, order, checkoutToken, demo, disabled: Boolean(order?.quote || order?.payment || order?.cashReceipt || order?.pendingPaymentHash)})
   const actionLock = useRef(false)
   const run = async (action: () => Promise<void> | void) => {
     if (actionLock.current) return
@@ -2236,7 +2269,7 @@ function Customer({
     )
   const remote = (order as MerchantOrder & {source?: string}).source === 'REMOTE'
   const awaitingAcceptance = String(order.status) === 'AWAITING_ACCEPTANCE'
-  const paid = Boolean(order.payment)
+  const paid = Boolean(order.payment || order.cashReceipt)
   const receipt = paidOrderSummary(order)
   const signing = !demo && !paid ? readSigningIntent(pendingKey) : null
   const expired =
@@ -2274,9 +2307,9 @@ function Customer({
           : order.status === 'COLLECTED'
             ? 'Thank you for stopping by.'
             : order.status === 'REFUND_PENDING'
-              ? 'Your refund is awaiting owner authorization.'
+              ? order.cashReceipt?t('Cash refund requested — money has not been handed back.'):'Your refund is awaiting owner authorization.'
               : order.status === 'REFUNDED'
-                ? 'Your full original crypto payment has been refunded.'
+                ? order.cashReceipt?t('The owner has confirmed your full cash refund.'):'Your full original crypto payment has been refunded.'
                 : awaitingAcceptance
                   ? t('Payment received. The cashier must accept your order before preparation starts.')
                 : paid
@@ -2324,7 +2357,7 @@ function Customer({
             {cryptoAmount(order.payment.amountAtomic, order.payment.asset)} ·
             paid
           </span>
-        ) : exactQuote && order.quote ? (
+        ) : order.cashReceipt ? (<span>{t('Cash recorded')}</span>) : exactQuote && order.quote ? (
           <span className="m-conversion">
             {cryptoAmount(order.quote.amountAtomic, order.quote.asset)} · exact
             quote

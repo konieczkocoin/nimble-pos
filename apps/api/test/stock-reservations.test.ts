@@ -5,7 +5,7 @@ import {env} from '../src/env'
 import {merchantStockReservation} from '../src/db/schema'
 import {eq} from 'drizzle-orm'
 const {db,close}=await freshDb(),{app,tokenFor}=authedApp(db)
-afterAll(async()=>{await app.close();await close()});afterEach(()=>vi.restoreAllMocks())
+afterAll(async()=>{await app.close();await close()});afterEach(()=>{vi.restoreAllMocks();vi.useRealTimers()})
 const key=()=>crypto.randomUUID()
 async function setup(tracked=true){
  const address='NQ-stock-'+key(),headers={authorization:`Bearer ${await tokenFor(await makeUser(db,address))}`}
@@ -37,7 +37,8 @@ async function setup(tracked=true){
 }
 it('expires unsubmitted stock mathematically and refunds a late verified receipt without taking the next buyers hold',async()=>{
  const s=await setup(),a=await s.order(),b=await s.order(),qa=(await s.quote(a)).json(),before=Date.now()
- vi.spyOn(Date,'now').mockReturnValue(before+61000)
+ // Advance both Date.now() and new Date(); a partial clock leaves retry eligibility behind.
+ vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(before+61000)
  expect(await s.inventory()).toMatchObject({quantity:1,reservedQuantity:0,availableQuantity:1})
  const qb=await s.quote(b);expect(qb.statusCode).toBe(200)
  app.deps.merchantPayments!.verify=async({quote,hash})=>({...quote,hash,confirmedAt:new Date(before).toISOString()})
@@ -147,7 +148,8 @@ it('settles a previously untracked quote using its original decision and release
  const s=await setup(false),a=await s.order(),original=(await s.quote(a)).json(),before=Date.now()
  expect(original.stockReservation.status).toBe('NONE')
  await s.call('PATCH',`/inventory/${s.item.id}`,{name:s.item.name,tracked:true,threshold:0,revision:1,reason:'Start tracking'})
- vi.spyOn(Date,'now').mockReturnValue(before+61000)
+ // Advance both Date.now() and new Date(); a partial clock leaves retry eligibility behind.
+ vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(before+61000)
  const refreshed=await s.quote(a);expect(refreshed.statusCode).toBe(200)
  expect(refreshed.json().stockReservation.status).toBe('HELD')
  expect(await s.inventory()).toMatchObject({quantity:1,reservedQuantity:1,availableQuantity:0})
