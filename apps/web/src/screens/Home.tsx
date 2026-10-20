@@ -60,7 +60,7 @@ export function Home() {
           <h1 className="brand">NIM<em>ble</em></h1>
           <p>{t('Pay or get paid with a 6-digit code.')}</p>
           <button className="primary" onClick={() => { setError(null); login().catch(e => setError(describeError(e))) }}>
-            Connect wallet
+            {t('Connect wallet')}
           </button>
           {error && <p role="alert">{error}</p>}
         </div>
@@ -84,10 +84,10 @@ export function Home() {
       {intro && <Intro onDismiss={() => { markIntroSeen(); setIntro(false) }} />}
       <nav className="home-actions" aria-disabled={wrongNetwork !== null}>
         <Link to="/pay" style={wrongNetwork ? { pointerEvents: 'none' } : undefined}>
-          <button className="primary" aria-label="Pay" disabled={wrongNetwork !== null}>
+          <button className="primary" aria-label={t('Pay')} disabled={wrongNetwork !== null}>
             {t('Pay')}<span className="sub" aria-hidden>{t('show your code')}</span></button></Link>
         <Link to="/charge" style={wrongNetwork ? { pointerEvents: 'none' } : undefined}>
-          <button aria-label="Charge" disabled={wrongNetwork !== null}>
+          <button aria-label={t('Charge')} disabled={wrongNetwork !== null}>
           {t('Charge')}<span className="sub" aria-hidden>{t('type their code')}</span></button></Link>
       </nav>
       {recent.length === 0 && !intro && (

@@ -59,4 +59,5 @@ jobs:
             acceptance-results.json
             e2e/test-results/**/error-context.md
             e2e/test-results/**/*.png
+            e2e/test-results/**/*.txt
           retention-days: 14

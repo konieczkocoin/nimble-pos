@@ -1,3 +1,4 @@
+import {writeFile} from 'node:fs/promises'
 import {expect,test,type Page,type TestInfo} from '@playwright/test'
 import type {ProductionDraft} from '../packages/shared/src/index'
 import {actorPage,seed,staffSession} from './full-day.fixture'
@@ -33,6 +34,10 @@ for(const width of [320,390,736,1280])test(`Polish operational screens at ${widt
   await inspect(manager,'basket-filled',info)
   await manager.getByRole('button',{name:/^Udostępnij płatność/}).click()
   await expect(manager.getByRole('heading',{name:/^Płatność gotówką$/})).toBeVisible()
+  await manager.getByLabel('Otrzymana gotówka',{exact:true}).fill('błąd')
+  await expect(manager.getByRole('button',{name:'Potwierdź przyjęcie gotówki',exact:true})).toBeDisabled()
+  await manager.getByLabel('Otrzymana gotówka',{exact:true}).fill('20,00')
+  await expect(manager.getByRole('button',{name:'Potwierdź przyjęcie gotówki',exact:true})).toBeEnabled()
   await inspect(manager,'payment',info)
   await manager.getByRole('button',{name:'Magazyn',exact:true}).click()
   await expect(manager.getByRole('button',{name:'Full-day raw',exact:true})).toBeVisible()
@@ -52,6 +57,7 @@ for(const width of [320,390,736,1280])test(`Polish operational screens at ${widt
   await manager.getByRole('button',{name:'Zmiana',exact:true}).click()
   await expect(manager.getByRole('button',{name:/^Zamknij moją zmianę/})).toBeVisible()
   await inspect(manager,'report',info)
+ }catch(error){for(const [name,page] of [['owner',owner],['manager',manager]] as const){if(page.url()!=='about:blank'){await writeFile(info.outputPath('failure-'+name+'.txt'),await page.locator('body').innerText());await page.screenshot({path:info.outputPath('failure-'+name+'.png'),fullPage:true})}}throw error
  }finally{await Promise.allSettled([owner,customer,manager].map(p=>p.context().close()))}
 })
 
@@ -87,5 +93,6 @@ test('Polish loading/error/empty, keyboard recovery and late venue response',asy
   await expect(owner.getByText('Nie ma jeszcze zadań pracowników.',{exact:true})).toBeVisible()
   await expect(owner.getByRole('alert')).toHaveCount(0)
   await inspect(owner,'tasks-after-keyboard-retry',info)
+ }catch(error){await writeFile(info.outputPath('failure-states.txt'),await owner.locator('body').innerText());await owner.screenshot({path:info.outputPath('failure-states.png'),fullPage:true});throw error
  }finally{release();await Promise.allSettled([owner,customer].map(p=>p.context().close()))}
 })
