@@ -120,3 +120,56 @@ it('clears the previous cashier shift and report while the next cashier data is 
     expect(screen.queryByRole('button', { name: 'Close my shift' })).toBeNull();
     expect(screen.queryAllByText(/987.65/)).toHaveLength(0);
 });
+it('restores handover successors after reloading an already signed-in terminal', async () => {
+    const venue = { id: 'v', name: 'Cafe', fiatCurrency: 'EUR' };
+    const cashier = { id: 'ana', name: 'Anna', active: true, role: 'CASHIER', permissions: [] };
+    const successor = { ...cashier, id: 'ola', name: 'Ola' };
+    sessionStorage.setItem('nimble:merchant:/api:cashier', JSON.stringify({ token: 'staff', venue, employee: cashier }));
+    const json = (value: unknown) => new Response(JSON.stringify(value));
+    const writes: unknown[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
+        if (url.endsWith('/session')) return json({ venue, employee: cashier });
+        if (url.endsWith('/terminal/profiles')) return json({ venue, employees: [cashier, successor] });
+        if (url.endsWith('/handovers')) {
+            if (init.method === 'POST') {
+                const body = JSON.parse(init.body as string); writes.push(body);
+                return json({ ...body, id: 'h', status: 'PENDING', createdBy: { kind: 'cashier', id: cashier.id, name: cashier.name }, createdAt: new Date().toISOString(), snapshot: { capturedAt: new Date().toISOString(), orders: [], refunds: [], shortages: [], tasks: [] } });
+            }
+            return json({ items: [] });
+        }
+        if (url.endsWith('/rates')) return json({ NIM: null, USDT: null });
+        return json(url.endsWith('/current') ? null : []);
+    }));
+    render(<MemoryRouter><MerchantTerminal /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Handover' }));
+    await screen.findByRole('option', { name: 'Ola' });
+    fireEvent.change(screen.getByLabelText('Successor'), { target: { value: successor.id } });
+    fireEvent.change(screen.getByLabelText('Handover note'), { target: { value: 'Stock reconciled' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Record handover snapshot' }));
+    await screen.findByText('Pending acknowledgement');
+    expect(writes).toEqual([expect.objectContaining({ successorEmployeeId: successor.id, note: 'Stock reconciled' })]);
+});
+it.each(['different venue', 'changed pairing'])('ignores a restored roster from a %s', async (context) => {
+    const venue = { id: 'v', name: 'Cafe', fiatCurrency: 'EUR' };
+    const employee = { id: 'ana', name: 'Anna', active: true, role: 'CASHIER', permissions: [] };
+    sessionStorage.setItem('nimble:merchant:/api:cashier', JSON.stringify({ token: 'staff', venue, employee }));
+    localStorage.setItem('nimble:merchant:/api:terminal', 'original');
+    const json = (value: unknown) => new Response(JSON.stringify(value));
+    let finish!: (response: Response) => void;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+        if (url.endsWith('/session')) return json({ venue, employee });
+        if (url.endsWith('/terminal/profiles')) return new Promise<Response>(resolve => { finish = resolve; });
+        if (url.endsWith('/handovers')) return json({ items: [] });
+        if (url.endsWith('/rates')) return json({ NIM: null, USDT: null });
+        return json(url.endsWith('/current') ? null : []);
+    }));
+    try {
+        render(<MemoryRouter><MerchantTerminal /></MemoryRouter>);
+        fireEvent.click(await screen.findByRole('button', { name: 'Handover' }));
+        await waitFor(() => expect(finish).toBeTypeOf('function'));
+        if (context === 'changed pairing') localStorage.setItem('nimble:merchant:/api:terminal', 'replacement');
+        await act(async () => { finish(json({ venue: context === 'different venue' ? { ...venue, id: 'foreign', name: 'Foreign cafe' } : venue, employees: [{ ...employee, id: 'other', name: 'Foreign successor' }] })); });
+        expect(screen.queryByRole('option', { name: 'Foreign successor' })).toBeNull();
+        expect(screen.queryByText('Foreign cafe')).toBeNull();
+    } finally { localStorage.removeItem('nimble:merchant:/api:terminal'); }
+});

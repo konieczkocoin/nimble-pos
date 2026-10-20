@@ -1088,13 +1088,17 @@ function Terminal({
     setCategory('All')
     key.current=uuid()
   },[demo,session?.token])
-  const loadProfiles = async () => {
+  const loadProfiles = async (isCurrent = () => true) => {
+    const token = authority.current
+    const terminal = localStorage.getItem(`${prefix}terminal`)
     if (demo) {
       setProfiles([...demo.employees])
       setVenue(demo.venue)
       return
     }
     const data = await api.profiles()
+    if (!isCurrent() || authority.current !== token || localStorage.getItem(`${prefix}terminal`) !== terminal) return
+    if (session && data.venue?.id !== session.venue.id) return
     setProfiles(data.employees)
     setVenue(data.venue)
   }
@@ -1129,12 +1133,12 @@ function Terminal({
   useEffect(() => {
     let active = true
     const token = session?.token
-    if (!session)
-      void loadProfiles().catch((e) => {
-        if (active && localStorage.getItem(`${prefix}terminal`))
-          setNotice(merchantError(e))
-      })
-    else void load().catch((e) => {
+    // Restored sessions also need the terminal roster for handovers and tasks.
+    void loadProfiles(() => active).catch((e) => {
+      if (active && authority.current === token && localStorage.getItem(`${prefix}terminal`))
+        setNotice(merchantError(e))
+    })
+    if (session) void load().catch((e) => {
       if (active && authority.current === token) setNotice(merchantError(e))
     })
     return () => {active=false}
