@@ -1431,11 +1431,13 @@ export async function merchantRoutes(app: FastifyInstance) {
       if (o.source === 'COUNTER') await priced(o.venueId, o.lines, tx as unknown as Db)
       if (o.source === 'REMOTE') {
         if (!env.remoteOrderingEnabled) return fail(409, 'VENUE_UNAVAILABLE')
+        // Serialize queue decisions without blocking FK KEY SHARE checks from
+        // POS reservations or reward movements that already hold stock locks.
         const [v] = await tx
           .select()
           .from(schema.merchantVenue)
           .where(eq(schema.merchantVenue.id, o.venueId))
-          .for('update')
+          .for('no key update')
         const [open] = await tx
           .select()
           .from(schema.merchantShift)
