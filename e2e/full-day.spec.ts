@@ -70,7 +70,9 @@ test('SIMULATED wallet/chain: a full venue day uses real routes, native DB and f
   })
   let remote!:MerchantOrder
   await test.step('customer places a remote order, joins loyalty and approves the simulated NIM wallet',async()=>{
-   await cashier.getByLabel('Accept new remote orders',{exact:true}).check()
+   // This controlled toggle changes only after the real availability request succeeds.
+   const availability=await changed<RemoteVenue>(cashier,`/remote/venues/${f.venue.id}/availability`,()=>cashier.getByLabel('Accept new remote orders',{exact:true}).click())
+   expect(availability.accepting).toBe(true);await expect(cashier.getByLabel('Accept new remote orders',{exact:true})).toBeChecked()
    await expect.poll(async()=>(await customerApi<{venue:RemoteVenue}>('GET','/remote/venues/'+f.venue.id)).venue.available).toBe(true)
    await customer.goto('/venues/'+f.venue.id);await customer.getByRole('button',{name:/^Full-day coffee/}).click();await customer.getByRole('button',{name:/^Add to basket/}).click()
    remote=await changed<MerchantOrder>(customer,'/remote'+f.base+'/orders',()=>customer.getByRole('button',{name:/^Place order/}).click())
