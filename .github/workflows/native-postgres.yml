@@ -54,6 +54,11 @@ jobs:
         run: node --test scripts/test-native-postgres.test.mjs
       - name: Verify backup failure and retention safety
         run: node --test scripts/test-backup.test.mjs
+      - name: Verify native stock contention regression
+        env:
+          NATIVE_POSTGRES_TEST_URL: postgres://nimble_test:disposable_ci_only@localhost:${{ job.services.postgres.ports[5432] }}/nimble_native_test
+          NATIVE_POSTGRES_ALLOW_RESET: 'yes'
+        run: node scripts/test-native-postgres.mjs test/stock-reward-reservations.test.ts 2>&1 | tee native-stock-locking.log
       - name: Run complete API suite on native PostgreSQL
         env:
           NATIVE_POSTGRES_TEST_URL: postgres://nimble_test:disposable_ci_only@localhost:${{ job.services.postgres.ports[5432] }}/nimble_native_test
@@ -68,6 +73,7 @@ jobs:
           name: native-postgres-${{ github.sha }}
           path: |
             native-postgres.log
+            native-stock-locking.log
             economics-ui.log
           if-no-files-found: ignore
           retention-days: 14
