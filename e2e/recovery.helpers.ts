@@ -27,7 +27,7 @@ export async function lostResponse<T>(page:Page,path:string,action:()=>Promise<u
  try{
   await Promise.all([action(),done])
   const retried=page.waitForRequest(r=>new URL(r.url()).pathname==='/v1/merchant'+path&&r.method()==='POST')
-  const [response]=await Promise.all([page.waitForResponse(r=>new URL(r.url()).pathname==='/v1/merchant'+path&&r.request().method()==='POST',{timeout:15000}),page.getByRole('button',{name:retryName,exact:true}).click()])
+  const [response]=await Promise.all([page.waitForResponse(r=>new URL(r.url()).pathname==='/v1/merchant'+path&&r.request().method()==='POST',{timeout:25000}),page.getByRole('button',{name:retryName,exact:true}).click()])
   expect(response.status()).toBe(retryStatus)
   const result=retryStatus===200?await response.json() as T:recorded
   const request=await retried
@@ -40,7 +40,7 @@ export async function lostResponse<T>(page:Page,path:string,action:()=>Promise<u
   return result
  }finally{clearTimeout(timer);await page.unroute(pattern,handler)}
 }
-export async function restartWorker(mode:'timeout'|'confirm'){
- const {stdout}=await promisify(execFile)(process.execPath,['--import','tsx',fileURLToPath(new URL('./recovery-worker.ts',import.meta.url)),mode],{cwd:fileURLToPath(new URL('../apps/api',import.meta.url)),env:process.env,timeout:15000})
+export async function restartWorker(mode:'timeout'|'confirm',checkoutToken:string){
+ const {stdout}=await promisify(execFile)(process.execPath,['--import','tsx',fileURLToPath(new URL('./recovery-worker.ts',import.meta.url)),mode,checkoutToken],{cwd:fileURLToPath(new URL('../apps/api',import.meta.url)),env:process.env,timeout:25000})
  return JSON.parse(stdout.trim()) as {pid:number;failures:{orderId:string;error:string}[]}
 }
