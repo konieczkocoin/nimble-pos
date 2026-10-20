@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-19",
+  "run_id": 39248236837,
+  "native_job_id": 118045323135,
+  "run_url": "https://github.com/konieczkocoin/nimble-pos/actions/runs/39248236837",
+  "head_sha": "5a9c3dc31803baa0caccd2e8989c5aecceec8d2e",
+  "checkout_sha": "ad01f115ba5376deab554ff3382a6e21d451cdd6",
+  "source_tree": "529b21be7028533a6aca4c562322b2d095d61f9e",
+  "local_equivalent": "a4521c0",
+  "postgres": "16.15",
+  "node": "22.23.3",
+  "pnpm": "9.15.0",
+  "backend_pids": [
+    101,
+    100
+  ],
+  "api": {
+    "passed": 401,
+    "total": 401,
+    "files": 79,
+    "failed": 0,
+    "skipped": 0
+  },
+  "report_ui": {
+    "passed": 7,
+    "total": 7,
+    "files": 2,
+    "includes_new_refund_margin_example": true
+  },
+  "full_day": "separate downstream job; result not implied by this evidence"
+}

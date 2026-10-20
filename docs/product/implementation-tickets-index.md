@@ -1,6 +1,12 @@
 # Plan wykonawczy Nimble — zadania dla modeli o mniejszej zdolności rozumowania
 
-**Aktualizacja19.10.2026:** odbiór01–09 zaliczony; natywne API401/401
+**Aktualizacja20.10.2026:**01 ponownie zaliczony po odtworzeniu i naprawie
+zakleszczenia POS/remote/nagroda. Poprawka a89cbdb: focused1/1, API401/401,
+UI raportów7/7 w run39477296697. Dowody native-postgres-acceptance-20261020.json/.txt.
+10 zaliczony w run39480374937: full-day1/1, wszystkie10etapów PASS.
+11 i12 są ready-for-agent, ich własne kryteria pozostają otwarte.
+Dowody: full-day-acceptance-20261020.json/.txt.
+Historyczny odbiór19.10.2026:01–09 zaliczony; natywne API401/401
 w79 plikach i aktualne testy UI modułów. Macierz i dokładne źródła:
 [acceptance-01-09-running.md](acceptance-01-09-running.md).
 Scenariusz10 uruchomiony przez pipeline po natywnym API i ekranach raportów;

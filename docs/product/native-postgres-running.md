@@ -1,6 +1,14 @@
 # PL-02 — native PostgreSQL acceptance
 
-Status: **native API acceptance PASSED** (2026-10-19). Earlier blocked attempts
+Status: **PASS — regression repaired and complete native API accepted2026-10-20**.
+Latest run39480374937: focused1/1, full API401/401 in79files, report UI7/7,
+fail0/skip0. PostgreSQL16.15, full-suite backend PIDs103/104.
+The20Oct deadlock was reproduced before the lock fix; RED evidence remains
+in native-stock-locking-red-20261020.txt. Latest GREEN evidence:
+full-day-acceptance-20261020.json and native-postgres-acceptance-final-20261020.txt.
+Earlier first-GREEN evidence remains in native-postgres-acceptance-20261020.json/.txt. Full-day and device/live
+network acceptance are separate gates.
+Earlier blocked attempts
 below are historical. Run39246316523:401/401 tests in79/79files, fail0/skip0,
 PostgreSQL16.15, independent backend PIDs84/85. Evidence:
 native-postgres-acceptance-20261019.json and .txt. Device/live-network gates
@@ -65,3 +73,32 @@ Independent Spec/Standards reviews found no issues. Guard and backup tests9/9
 passed after locked installation. Full native execution still exits before API
 tests due to missing PostgreSQL configuration; PL-02/task01 remain blocked.
 Details and recovery: native-postgres-evidence-running.md.
+
+## Deterministic contention regression — 2026-10-20
+
+Local809791c / published6f97d6961127ea2d4b3ca914ad6c462510bbcaa2 adds
+a remote-provider barrier to the existing three-way last-portion case. Native
+run39476784632, job118814690235 fails in7.06s with
+`POS and reward are blocked by an unrelated remote quote provider`; the
+subsequent log also reports40P01. Full API and E2E correctly do not run.
+
+Locala89cbdb / published48c7873ff5c5c2c07875e7755fd79c27da2cfaa1 changes
+only the remote queue venue lock from FOR UPDATE to FOR NO KEY UPDATE.
+Remote decisions still conflict with each other and venue updates; foreign-key
+KEY SHARE checks can proceed while stock locks are held. Stock availability,
+queue capacity and loyalty assertions are unchanged. PostgreSQL16 lock matrix:
+https://www.postgresql.org/docs/16/explicit-locking.html
+
+API TypeScript check passes. Independent Spec and Standards reviews of
+c49df3b..a89cbdb report no findings. Run39477296697 is the required GREEN
+attempt; acceptance remains open until native results are recorded.
+
+### GREEN result —2026-10-20
+
+Run39477296697, native job118816452434: focused1/1 in4.33s, complete
+API401/401 in79/79files in171.76s, UI economics/finance7/7; zero failures
+or skipped tests. Includes remote queue last-slot competition and notification
+persistence. Node22.23.3, pnpm9.15.0, PostgreSQL16.15. Focused PIDs93/92,
+full PIDs105/106. Checkout623709d4c2355bdd276cc9ff916cb63814055f90 has
+tree03099c720763523f5a2b75818f284e02220afe88, verified through Git data and
+identical to locala89cbdb. Full-day runs downstream with independent evidence.

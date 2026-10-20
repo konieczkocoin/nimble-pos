@@ -1,0 +1,15 @@
+Native contention RED — run39476784632 job118814690235
+Head6f97d6961127ea2d4b3ca914ad6c462510bbcaa2
+Selected original CI log lines (ANSI removed; infrastructure output omitted):
+2026-10-20T18:40:41.3740262Z   printf 'Checkout SHA: %s\n' "$(git rev-parse HEAD)"
+2026-10-20T18:40:41.3917143Z Checkout SHA: 65c62529b283ce100ba8d8b9614aa57a052ea0cc
+2026-10-20T18:40:41.3943640Z Node: v22.23.3
+2026-10-20T18:40:41.6395815Z pnpm: 9.15.0
+2026-10-20T18:40:44.6630558Z Native session verification: PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit; backend PIDs 84, 85
+2026-10-20T18:40:53.9316120Z {"level":50,"time":1792521653930,"pid":3124,"hostname":"runnervmxehtw","err":{"type":"PostgresError","message":"deadlock detected","stack":"PostgresError: deadlock detected\n    at ErrorResponse (file:///home/runner/work/nimble-pos/nimble-pos/node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30)\n    at handle (file:///home/runner/work/nimble-pos/nimble-pos/node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6)\n    at Socket.data (file:///home/runner/work/nimble-pos/nimble-pos/node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9)\n    at Socket.emit (node:events:519:28)\n    at addChunk (node:internal/streams/readable:561:12)\n    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n    at Socket.Readable.push (node:internal/streams/readable:392:5)\n    at TCP.onStreamRead (node:internal/stream_base_commons:189:23)","name":"PostgresError","severity_local":"ERROR","severity":"ERROR","code":"40P01","detail":"Process 94 waits for ExclusiveLock on advisory lock [16384,0,1094616961,1]; blocked by process 95.\nProcess 95 waits for ShareLock on transaction 832; blocked by process 94.","hint":"See server log for query details.","file":"deadlock.c","line":"1130","routine":"DeadLockReport"},"msg":"deadlock detected"}
+2026-10-20T18:40:53.9511534Z    → POS and reward are blocked by an unrelated remote quote provider
+2026-10-20T18:40:53.9729009Z  FAIL  test/stock-reward-reservations.test.ts > accepts a reward only when stock is available, atomically spends stamps and never consumes twice
+2026-10-20T18:40:53.9739476Z Error: POS and reward are blocked by an unrelated remote quote provider
+2026-10-20T18:40:54.0246602Z  Test Files  1 failed (1)
+2026-10-20T18:40:54.0247058Z       Tests  1 failed (1)
+2026-10-20T18:40:55.2139437Z  2026-10-20 18:40:53.922 UTC [94] ERROR:  deadlock detected

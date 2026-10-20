@@ -1,0 +1,127 @@
+{
+  "date": "2026-10-20",
+  "repository": "konieczkocoin/nimble-pos",
+  "pull_request": 1,
+  "run_id": 39480374937,
+  "native_job_id": 118827054546,
+  "browser_job_id": 118828815672,
+  "run_url": "https://github.com/konieczkocoin/nimble-pos/actions/runs/39480374937",
+  "head_sha": "5388dc58742f1b5fb939346c81f3582e7fec8a43",
+  "checkout_sha": "d6d84601cb7d602c27f6b5f80af57b2f20c2b617",
+  "source_tree": "bab9c3cbb541617632b47e9fa9d187c4f8296a64",
+  "local_equivalent": "afb68bb2f68d7472a52752e3ab33aa787f0e1e92",
+  "versions": {
+    "node": "22.23.3",
+    "pnpm": "9.15.0",
+    "postgres": "16.15"
+  },
+  "focused_native": {
+    "passed": 1,
+    "total": 1,
+    "backend_pids": [
+      91,
+      92
+    ]
+  },
+  "api": {
+    "passed": 401,
+    "total": 401,
+    "files": 79,
+    "failed": 0,
+    "skipped": 0,
+    "backend_pids": [
+      103,
+      104
+    ],
+    "duration_seconds": 168.45
+  },
+  "report_ui": {
+    "passed": 7,
+    "total": 7
+  },
+  "local_web": {
+    "passed": 314,
+    "total": 314,
+    "files": 72,
+    "failed": 0,
+    "skipped": 0
+  },
+  "web_build": "PASS including TypeScript",
+  "browser": {
+    "passed": 1,
+    "total": 1,
+    "failed": 0,
+    "skipped": 0,
+    "retries": 0,
+    "flaky": 0,
+    "duration_ms": 20260.561999999998,
+    "test_duration_ms": 13387,
+    "steps": [
+      {
+        "title": "delivery received through manager UI; API stock is 120 raw and zero prepared",
+        "duration_ms": 453,
+        "status": "passed"
+      },
+      {
+        "title": "save and execute production draft through manager UI",
+        "duration_ms": 363,
+        "status": "passed"
+      },
+      {
+        "title": "cashier requests a 500-minor discount, owner approves, then cashier records 750 cash",
+        "duration_ms": 1852,
+        "status": "passed"
+      },
+      {
+        "title": "customer places a remote order, joins loyalty and approves the simulated NIM wallet",
+        "duration_ms": 840,
+        "status": "passed"
+      },
+      {
+        "title": "cashier accepts, prepares and verifies pickup; customer earns one stamp",
+        "duration_ms": 3265,
+        "status": "passed"
+      },
+      {
+        "title": "owner records a one-portion loss and checks physical stock",
+        "duration_ms": 514,
+        "status": "passed"
+      },
+      {
+        "title": "cashier hands over and closes; returning manager acknowledges on the same terminal",
+        "duration_ms": 921,
+        "status": "passed"
+      },
+      {
+        "title": "owner confirms physical cash refund without altering stock or the closed shift",
+        "duration_ms": 551,
+        "status": "passed"
+      },
+      {
+        "title": "owner closes the operational day and exports real finance ledger",
+        "duration_ms": 408,
+        "status": "passed"
+      },
+      {
+        "title": "private second venue stays invisible to owner and operational actor",
+        "duration_ms": 188,
+        "status": "passed"
+      }
+    ]
+  },
+  "artifacts": {
+    "native": 12290114313,
+    "full_day": 12290563211,
+    "expires": "2026-11-03"
+  },
+  "asserted_final_balances": {
+    "raw": 100,
+    "prepared": 7,
+    "net_sales_minor": "1250",
+    "cash_net_minor": "0",
+    "nim_received_atomic": "1250000",
+    "loyalty_stamps": 1,
+    "closed_cashier_shift_gross_minor": 2000
+  },
+  "simulation": "Wallet identity and chain verification only. Real business routes, native dedicated DB, four isolated browser contexts. Not device/live-network acceptance."
+}

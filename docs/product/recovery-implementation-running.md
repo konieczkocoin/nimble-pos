@@ -361,3 +361,44 @@ poprzedni NIMBLE-NATIVE-EVIDENCE-FULL-CODE.zip,
 libfile_820668cb19548191af651fc515837963,
 SHA256dcbfb6cce7b4c7125fc488180355cbafc6adc925fd8a41512684cca998220045.
 Nowe ID/hash potwierdzić w zewnętrznym raporcie po końcowym zapisie.
+
+## Kontynuacja20.10.2026 — rzeczywisty deadlock i ponowny odbiór
+
+Run39475756081 ujawnił natywny deadlock POS/remote/nagroda.
+Test809791c odtwarza go deterministycznie przez barierę dostawcy remote;
+run39476784632 RED. Poprawkaa89cbdb używa NO KEY UPDATE dla lokalu
+przy wycenie remote: zachowuje serializację kolejki i umożliwia FK KEY SHARE
+rezerwacji/ruchów magazynu. Spec/Standards bez uwag; API tsc PASS.
+Run39477296697: focused1/1, API401/401 w79plikach, UI raportów7/7;
+fail0/skip0. PG16.15, PID105/106, Node22.23.3, pnpm9.15.0.
+Dowody native-postgres-acceptance-20261020.json/.txt oraz RED osobno.
+
+Full-day tego samego run przechodzi gotówkę z odbiorem, ale wymaga
+synchronizacji kontrolowanego checkboxa dostępności remote po odpowiedzi API.
+Poprawkaf046f72 dodaje oczekiwanie na rzeczywisty PATCH oraz stan serwera/UI.
+Typy E2E PASS, oba przeglądy bez uwag. Wynik następnego pełnego przebiegu
+w full-day-running.md; nie oznaczaj10 jako completed przed GREEN.
+
+Task10 odtworzył także rzeczywisty brak listy następców po odświeżeniu
+zalogowanego terminala. afb68bb pobiera roster z osłonami sesji/lokalu/parowania;
+regresja RED→GREEN, web314/314, targeted10/10, build PASS, przeglądy bez uwag.
+Szczegóły terminal-roster-recovery-running.md. Bieżący browser retry pending.
+
+## Końcowy odbiór20.10.2026 — task10 zaliczony
+
+Run39480374937: focused native1/1, API401/401 w79plikach, raportyUI7/7,
+pełny dzień1/1 ze wszystkimi10etapami; fail0/skip0/retry0/flaky0.
+Checkoutd6d84601cb7d602c27f6b5f80af57b2f20c2b617 ma drzewo
+bab9c3cbb541617632b47e9fa9d187c4f8296a64 identyczne z localafb68bb,
+published5388dc58742f1b5fb939346c81f3582e7fec8a43. PG16.15, Node22.23.3,
+pnpm9.15.0; native PID103/104. Browser job118828815672.
+Web314/314 w72plikach, targeted10/10, build/typecheck PASS. Przeglądy
+Spec/Standards bez otwartych uwag. Naprawiono rzeczywiste zakleszczenie PG
+i brak rosteru przywróconej sesji; asercje finansowe zachowane.
+Dowody full-day-acceptance-20261020.json/.txt i native-postgres-acceptance-final-20261020.txt.
+01–10 zaliczone;11/12 ready-for-agent. Portfel/łańcuch symulowany: nie
+jest to odbiór realnego przelewu, telefonu ani wdrożenia. PR1 nadal draft.
+Końcowy commit dokumentacyjny nie zmienia testowanego kodu/testów/workflow.
+Pełny checkpoint NIMBLE-NATIVE-ACCEPTANCE-FULL-CODE.zip zachowuje wszystkie
+źródła i osiągalną historię; potwierdzone nowe ID/SHA256 w zewnętrznym
+raporcie kontynuacji i opisie PR po zapisie. Wcześniejsze archiwa zachowane.
