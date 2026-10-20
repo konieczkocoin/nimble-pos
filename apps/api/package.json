@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "test": "vitest run",
+    "test:finance:pglite": "vitest run --config vitest.pglite.config.ts test/merchant-operations.test.ts test/finance.test.ts",
     "migrate": "tsx src/db/migrate.ts",
     "generate": "drizzle-kit generate",
     "start": "tsx src/server.ts"
@@ -23,6 +24,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
     "@types/node": "^22.10.0",
     "drizzle-kit": "^0.30.0",
     "tsx": "^4.19.0",

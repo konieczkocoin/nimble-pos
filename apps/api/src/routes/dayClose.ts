@@ -27,23 +27,40 @@ export async function dayCloseRoutes(app:FastifyInstance,h:MerchantTaskHelpers){
  }
  // One SQL statement gives all components the same MVCC snapshot, including a concurrent payment.
  async function capture(store:Db,venueId:string,w:z.infer<typeof windowInput>){
-  const rows=await store.execute(sql`select jsonb_build_object(
+  const rows=await store.execute(sql`with day_sales as (
+    select f.data from merchant_financial_sale f where f.venue_id=${venueId} and f.data->>'status'='RECORDED'
+    and ((f.occurred_at at time zone ${w.timeZone}) - ${w.boundaryHour}*interval '1 hour')::date=${w.date}::date
+   ), method_sales as (
+    select data->>'fiatCurrency' as currency,coalesce(data->>'paymentMethod',case when data->>'paymentHash' is not null then 'CRYPTO' end) as method,(data->>'totalMinor')::bigint as amount from day_sales
+   ), cash_events as (
+    select currency,due_minor::bigint as amount,'RECEIPT' as kind from merchant_cash_receipt where venue_id=${venueId} and ((recorded_at at time zone ${w.timeZone}) - ${w.boundaryHour}*interval '1 hour')::date=${w.date}::date
+    union all select currency,amount_minor::bigint,'CONFIRMED' from merchant_cash_refund where venue_id=${venueId} and status='CONFIRMED' and ((confirmed_at at time zone ${w.timeZone}) - ${w.boundaryHour}*interval '1 hour')::date=${w.date}::date
+    union all select currency,amount_minor::bigint,'REQUESTED' from merchant_cash_refund where venue_id=${venueId} and status='REQUESTED'
+   ) select jsonb_build_object(
    'capturedAt',clock_timestamp(),
    'issues',coalesce((select jsonb_agg(issue order by issue->>'key') from (
     select jsonb_build_object('key','TASK:'||id,'kind','TASK','title',snapshot->>'title','status',status) as issue from merchant_task where venue_id=${venueId} and due_at<=now() and status not in ('APPROVED','SKIPPED')
     union all select jsonb_build_object('key','ORDER:'||id,'kind','ORDER','title','Order '||number,'status',status) from merchant_order where venue_id=${venueId} and status in ('AWAITING_PAYMENT','PAYMENT_PENDING','AWAITING_ACCEPTANCE','PREPARING','READY','REFUND_PENDING')
     union all select jsonb_build_object('key','REFUND:'||r.id,'kind','REFUND','title','Refund '||o.number,'status',r.status) from merchant_refund r join merchant_order o on o.id=r.order_id where o.venue_id=${venueId} and r.status<>'CONFIRMED'
+    union all select jsonb_build_object('key','CASH_REFUND:'||r.id,'kind','REFUND','title','Cash refund '||o.number,'status',r.status) from merchant_cash_refund r join merchant_order o on o.id=r.order_id where r.venue_id=${venueId} and r.status='REQUESTED'
     union all select jsonb_build_object('key','STOCK:'||id,'kind','STOCK','title',kind,'status',data->>'status') from merchant_stock_operation where venue_id=${venueId} and ((kind='STOCKTAKE' and data->>'status'='OPEN') or (kind='LOSS' and data->>'status'='PENDING'))
     union all select jsonb_build_object('key','HANDOVER:'||id,'kind','HANDOVER','title','Shift handover','status',status) from merchant_handover where venue_id=${venueId} and status='PENDING'
    ) unresolved),'[]'::jsonb),
    'sales',coalesce((select jsonb_agg(totals order by totals->>'currency') from (
-    select jsonb_build_object('currency',f.data->>'fiatCurrency','totalMinor',sum((f.data->>'totalMinor')::bigint)::text,'count',count(*)::int) as totals from merchant_financial_sale f join merchant_order o on o.id=f.order_id
-    where f.venue_id=${venueId} and f.data->>'status'='RECORDED'
-    and ((o.created_at at time zone ${w.timeZone}) - ${w.boundaryHour}*interval '1 hour')::date=${w.date}::date group by f.data->>'fiatCurrency'
+    select jsonb_build_object('currency',f.data->>'fiatCurrency','totalMinor',sum((f.data->>'totalMinor')::bigint)::text,'count',count(*)::int) as totals from day_sales f group by f.data->>'fiatCurrency'
+   ) grouped),'[]'::jsonb),
+   'salesByPaymentMethod',coalesce((select jsonb_agg(totals order by totals->>'currency',coalesce(totals->>'paymentMethod','UNKNOWN')) from (
+    select jsonb_build_object('currency',currency,'paymentMethod',method,'salesMinor',sum(amount)::text,'count',count(*)::int) as totals from method_sales group by currency,method
+   ) grouped),'[]'::jsonb),
+   'cash',coalesce((select jsonb_agg(totals order by totals->>'currency') from (
+    select jsonb_build_object('currency',currency,'receivedMinor',coalesce(sum(amount) filter(where kind='RECEIPT'),0)::text,'confirmedRefundsMinor',coalesce(sum(amount) filter(where kind='CONFIRMED'),0)::text,'netMinor',(coalesce(sum(amount) filter(where kind='RECEIPT'),0)-coalesce(sum(amount) filter(where kind='CONFIRMED'),0))::text,'refundLiabilityMinor',coalesce(sum(amount) filter(where kind='REQUESTED'),0)::text) as totals from cash_events group by currency
+   ) grouped),'[]'::jsonb),
+   'ownerCashPayouts',coalesce((select jsonb_agg(totals order by totals->>'currency') from (
+    select jsonb_build_object('currency',currency,'amountMinor',sum(amount)::text) as totals from cash_events where kind='CONFIRMED' group by currency
    ) grouped),'[]'::jsonb)
   ) as snapshot`);
   const snapshot=rows[0].snapshot as DayCloseSnapshot;
-  const fingerprint=createHash('sha256').update(JSON.stringify({issues:snapshot.issues,sales:snapshot.sales})).digest('hex');
+  const fingerprint=createHash('sha256').update(JSON.stringify({issues:snapshot.issues,sales:snapshot.sales,cash:snapshot.cash,ownerCashPayouts:snapshot.ownerCashPayouts,salesByPaymentMethod:snapshot.salesByPaymentMethod})).digest('hex');
   return {...w,snapshot,fingerprint};
  }
  app.get(base+'/preview',async req=>{const {venueId}=await context(req);return capture(db,venueId,window(req.query))});

@@ -1,0 +1,30 @@
+{
+  "base": "494d802",
+  "api": {
+    "engine": "PGlite (not independent native PostgreSQL sessions)",
+    "passed": 390,
+    "failed": 1,
+    "total": 391,
+    "files": 77,
+    "failures": [
+      "apps/api/test/merchantNotificationPersistence.test.ts"
+    ]
+  },
+  "cashApi": {
+    "passed": 9,
+    "total": 9
+  },
+  "web": {
+    "passed": 300,
+    "total": 300,
+    "files": 70
+  },
+  "shared": {
+    "passed": 58,
+    "total": 58,
+    "files": 9
+  },
+  "nativePostgres": "blocked before test execution: NATIVE_POSTGRES_BIN / NATIVE_POSTGRES_TEST_URL unavailable",
+  "typecheckApi": "pass",
+  "buildWeb": "pass; existing large chunk warning"
+}

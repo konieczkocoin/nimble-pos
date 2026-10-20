@@ -1,3 +1,4 @@
+import {PaymentMethodSummary} from './PaymentMethodSummary'
 import type { MerchantReport as ReportData } from './contract'
 import { money, cryptoAmount } from './format'
 import { t } from '../i18n'
@@ -21,6 +22,7 @@ export function MerchantReport({ report, title }: { report: ReportData | null; t
         <div><strong>{money(totals.refundPendingMinor ?? 0, totals.fiatCurrency)}</strong><small>{t('Awaiting refund')}</small></div>
       </div>
       <p className="m-muted">{t('Remote orders')}: {remote} · {t('Counter orders')}: {counter}</p>
+      <PaymentMethodSummary cash={totals.cash} sales={totals.salesByPaymentMethod} ownerPayouts={totals.ownerCashPayouts}/>
       <div className="m-soft">
         <p>{cryptoAmount(totals.assets.NIM, 'NIM')}</p>
         <p>{cryptoAmount(totals.assets.USDT, 'USDT')}</p>

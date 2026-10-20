@@ -7,6 +7,7 @@ export const API_URL = 'http://localhost:3100'
 
 export default defineConfig({
   testDir: '.',
+  testIgnore:['full-day.spec.ts','recovery-day.spec.ts','mobile-acceptance.spec.ts'],
   timeout: 60_000,
   fullyParallel: false,
   workers: 1,

@@ -1,0 +1,43 @@
+{
+  "base": "415faa3",
+  "api": {
+    "engine": "PGlite; not independent native PostgreSQL sessions",
+    "passed": 394,
+    "failed": 1,
+    "total": 395,
+    "files": 78,
+    "failures": [
+      "apps/api/test/merchantNotificationPersistence.test.ts"
+    ]
+  },
+  "targetedApi": {
+    "passed": 25,
+    "total": 25,
+    "files": 5
+  },
+  "cashReportApi": {
+    "passed": 4,
+    "total": 4
+  },
+  "web": {
+    "passed": 302,
+    "total": 302,
+    "files": 71
+  },
+  "cashReportUi": {
+    "passed": 2,
+    "total": 2
+  },
+  "shared": {
+    "passed": 58,
+    "total": 58,
+    "files": 9
+  },
+  "typecheckApi": "pass",
+  "buildWeb": "pass; existing large chunk warning",
+  "nativePostgres": "blocked before test execution; NATIVE_POSTGRES_BIN and NATIVE_POSTGRES_TEST_URL unavailable",
+  "review": {
+    "spec": "no open functional finding; Warsaw DST boundary and foreignaccess evidence added",
+    "standards": "no blocking finding; Polish translations added and rechecked"
+  }
+}

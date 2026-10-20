@@ -1,0 +1,16 @@
+Run39480374937 job118828815672
+Checkout d6d84601cb7d602c27f6b5f80af57b2f20c2b617
+Tree bab9c3cbb541617632b47e9fa9d187c4f8296a64
+Chromium, real API/native PG; wallet/chain SIMULATION.
+1/1 PASS; fail0 skip0 retry0 flaky0.
+PASS delivery received through manager UI; API stock is 120 raw and zero prepared
+PASS save and execute production draft through manager UI
+PASS cashier requests a 500-minor discount, owner approves, then cashier records 750 cash
+PASS customer places a remote order, joins loyalty and approves the simulated NIM wallet
+PASS cashier accepts, prepares and verifies pickup; customer earns one stamp
+PASS owner records a one-portion loss and checks physical stock
+PASS cashier hands over and closes; returning manager acknowledges on the same terminal
+PASS owner confirms physical cash refund without altering stock or the closed shift
+PASS owner closes the operational day and exports real finance ledger
+PASS private second venue stays invisible to owner and operational actor
+Final balances asserted by the scenario: raw100/prepared7, sales1250 minor, cash net0, NIM1250000 atomic, loyalty1.

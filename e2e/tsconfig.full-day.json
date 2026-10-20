@@ -1,0 +1,28 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
+    "lib": [
+      "ES2022",
+      "DOM", "DOM.Iterable"
+    ],
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "../apps/api/node_modules/@types"
+    ]
+  },
+  "include": [
+    "full-day*.ts",
+    "playwright.full-day.config.ts",
+    "helpers.ts",
+    "../apps/api/src/**/*.d.ts",
+    "venue-day.scenario.ts",
+    "recovery*.ts",
+    "playwright.acceptance.config.ts",
+    "mobile-acceptance.spec.ts"
+  ]
+}

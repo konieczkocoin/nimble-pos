@@ -1,0 +1,65 @@
+name: Full venue day acceptance
+
+# Manual execution or the native-acceptance pipeline; simulated wallet/chain only.
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  full-day:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nimble_test
+          POSTGRES_PASSWORD: disposable_ci_only
+          POSTGRES_DB: nimble_full_day_test
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U nimble_test -d nimble_full_day_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify database guards and scenario types
+        run: |
+          node --test scripts/test-full-day-preflight.test.mjs
+          pnpm --filter @nimble/e2e typecheck:full-day
+      - name: Install Chromium and system dependencies
+        run: pnpm --filter @nimble/e2e exec playwright install --with-deps chromium
+      - name: Run full venue day on fresh native PostgreSQL
+        env:
+          FULL_DAY_TEST_DATABASE_URL: postgres://nimble_test:disposable_ci_only@localhost:${{ job.services.postgres.ports[5432] }}/nimble_full_day_test
+          FULL_DAY_ALLOW_TEST_MIGRATIONS: 'yes'
+          PLAYWRIGHT_JSON_OUTPUT_FILE: ${{ github.workspace }}/full-day-results.json
+        run: corepack pnpm --filter @nimble/e2e test:full-day --reporter=line,json 2>&1 | tee full-day.log
+      - name: Preserve textual acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-day-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            full-day.log
+            full-day-results.json
+            e2e/test-results/**/error-context.md
+          if-no-files-found: ignore
+          retention-days: 14

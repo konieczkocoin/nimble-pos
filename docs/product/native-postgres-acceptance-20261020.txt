@@ -1,0 +1,423 @@
+2026-10-20T18:44:16.2273405Z Checkout SHA: 623709d4c2355bdd276cc9ff916cb63814055f90
+2026-10-20T18:44:16.2302802Z Node: v22.23.3
+2026-10-20T18:44:16.6290732Z pnpm: 9.15.0
+2026-10-20T18:44:20.6557869Z Native session verification: PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit; backend PIDs 93, 92
+2026-10-20T18:44:25.2630682Z  ✓ test/stock-reward-reservations.test.ts > accepts a reward only when stock is available, atomically spends stamps and never consumes twice 1803ms
+2026-10-20T18:44:25.2866833Z  Test Files  1 passed (1)
+2026-10-20T18:44:25.2868244Z       Tests  1 passed (1)
+2026-10-20T18:44:25.2871549Z    Duration  4.33s (transform 715ms, setup 0ms, collect 2.30s, tests 1.81s, environment 0ms, prepare 61ms)
+2026-10-20T18:44:25.4082681Z Native session verification: PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit; backend PIDs 105, 106
+2026-10-20T18:44:28.1435562Z  ✓ test/remote.test.ts > publishes a venue but requires an active cashier to accept remote orders
+2026-10-20T18:44:28.1776825Z  ✓ test/remote.test.ts > creates a customer-owned idempotent order and protects every checkout read
+2026-10-20T18:44:28.3268498Z  ✓ test/remote.test.ts > checks payer without loyalty, waits for explicit acceptance, and issues recoverable pickup
+2026-10-20T18:44:28.3707330Z  ✓ test/remote.test.ts > previews without collecting and requires READY and a single verified pickup
+2026-10-20T18:44:28.4706170Z  ✓ test/remote.test.ts > rejects with one refund obligation and excludes unaccepted payments from sales
+2026-10-20T18:44:28.5465128Z  ✓ test/remote.test.ts > expires persisted acceptance deadlines without a terminal and does not accept late decisions
+2026-10-20T18:44:28.6275685Z  ✓ test/remote.test.ts > honors an issued quote after pause while blocking new baskets, and preserves pickup address when hidden
+2026-10-20T18:44:28.9905412Z  ✓ test/remote.test.ts > requires EVM proof without enrolling and awards loyalty only at acceptance, never rejection 362ms
+2026-10-20T18:44:29.1100602Z  ✓ test/remote.test.ts > lets a cashier close a shift while the owner refund remains in the venue queue
+2026-10-20T18:44:29.3006672Z  ✓ test/remote.test.ts > preserves the first loyalty promise while a paid remote order awaits acceptance across program versions
+2026-10-20T18:44:29.4659492Z  ✓ test/remote.test.ts > serializes concurrent create, duplicate acceptance and competing pickup requests
+2026-10-20T18:44:29.5189093Z  ✓ test/remote.test.ts > persists timed order pauses and requires live cashier presence before reopening
+2026-10-20T18:44:29.6383898Z  ✓ test/remote.test.ts > blocks new remote orders at the active queue limit without counting unpaid baskets
+2026-10-20T18:44:29.7083314Z  ✓ test/remote.test.ts > reserves the last queue slot for only one concurrent checkout quote
+2026-10-20T18:44:31.2587649Z  ✓ test/loyalty.test.ts > owner publishes rules and customer voluntarily joins a private recoverable card
+2026-10-20T18:44:31.9031742Z  ✓ test/loyalty.test.ts > five confirmed purchases earn once and one reward travels through the cashier queue 683ms
+2026-10-20T18:44:32.0859447Z  ✓ test/loyalty.test.ts > refund after collected reward creates debt without reducing the full refund and next purchase pays it off
+2026-10-20T18:44:32.2776185Z  ✓ test/loyalty.test.ts > unconfirmed transfers and mismatching identity never earn, while optional participation remains optional
+2026-10-20T18:44:32.8768158Z  ✓ test/loyalty.test.ts > unaccepted reservations cancel on refund request and expiry releases stamps; accepted cancellation restores exactly once 599ms
+2026-10-20T18:44:32.9938931Z  ✓ test/loyalty.test.ts > unavailable reward preserves stamps and expired reservations are recoverable without spending
+2026-10-20T18:44:33.0923416Z  ✓ test/loyalty.test.ts > concurrent last-five reservations have one winner and cancelled retries restore only once
+2026-10-20T18:44:33.2252496Z  ✓ test/loyalty.test.ts > EVM proof links only its signer with nonce replay defence and USDT shares the same Nimiq card
+2026-10-20T18:44:33.4373140Z  ✓ test/loyalty.test.ts > new rules preserve open cards, disabling stops earning while promised rewards remain redeemable
+2026-10-20T18:44:34.3193911Z  ✓ test/loyalty.test.ts > closed old cards cannot opt back into old terms and late refunds block rewards on a newer card 884ms
+2026-10-20T18:44:34.6430096Z  ✓ test/loyalty.test.ts > paid snapshot minimum excludes small purchases and late canonical transfers while duplicate settlement earns once 321ms
+2026-10-20T18:44:34.6748162Z  ✓ test/loyalty.test.ts > active reward variants cannot disappear before the first customer joins
+2026-10-20T18:44:36.1503279Z  ✓ test/shifts.test.ts > opens one shift, refuses a second, closes it and reports
+2026-10-20T18:44:36.2113844Z  ✓ test/shifts.test.ts > a closed shift with a confirmed fiat sale reports the same non-zero numbers every time it is asked
+2026-10-20T18:44:36.2716291Z  ✓ test/shifts.test.ts > the export reconciles: amount_fiat_minor / fx_rate equals amount_crypto, with nothing added
+2026-10-20T18:44:36.2717899Z  ✓ test/shifts.test.ts > a vendor cannot read another vendor shift
+2026-10-20T18:44:36.4035745Z  ✓ test/shifts.test.ts > lists the caller's shifts newest first, with totals, honouring the cap
+2026-10-20T18:44:36.4286946Z  ✓ test/shifts.test.ts > the shift list never includes another vendor's shifts
+2026-10-20T18:44:36.4288222Z  ✓ test/shifts.test.ts > excludes the currently open shift from the list; it appears once closed
+2026-10-20T18:44:36.5013767Z  ✓ test/shifts.test.ts > the list's grossNim and confirmed agree with buildReport's totals for a mixed shift
+2026-10-20T18:44:36.5249910Z  ✓ test/shifts.test.ts > exports RFC 4180 CSV with a BOM, CRLF and the rate columns
+2026-10-20T18:44:36.5539134Z  ✓ test/shifts.test.ts > open shifts get -open suffix in export filename, closed shifts do not
+2026-10-20T18:44:36.5884469Z  ✓ test/shifts.test.ts > neutralizes spreadsheet formula injection in reference and operator columns
+2026-10-20T18:44:36.6154117Z  ✓ test/shifts.test.ts > a report with a sale and its partial refund shows both entries, the refund negative
+2026-10-20T18:44:36.6460347Z  ✓ test/shifts.test.ts > averageTicketNim is computed from sales only, not from the net-of-refunds amount
+2026-10-20T18:44:36.6789836Z  ✓ test/shifts.test.ts > a refund of a sale from a different shift has refundOfLocalNumber null but refundOfOccurredAt filled
+2026-10-20T18:44:36.7038998Z  ✓ test/shifts.test.ts > the CSV export carries the refund reference in a new column appended at the end
+2026-10-20T18:44:36.7257372Z  ✓ test/shifts.test.ts > the past-shifts list subtracts refunds, agreeing with the report it summarises
+2026-10-20T18:44:38.2806787Z  ✓ test/inventory-operations.test.ts > receives a delivery in parts, retries safely and reverses an incorrect receipt
+2026-10-20T18:44:38.3676073Z  ✓ test/inventory-operations.test.ts > finalizes a count against its opening snapshot without erasing later deliveries
+2026-10-20T18:44:38.5795202Z  ✓ test/inventory-operations.test.ts > redacts unit costs on reads, mutations, idempotent replay and audit while checking live permissions
+2026-10-20T18:44:38.8065618Z  ✓ test/inventory-operations.test.ts > requires owner approval for losses above threshold and prevents negative balances or legacy bypass
+2026-10-20T18:44:38.9071144Z  ✓ test/inventory-operations.test.ts > isolates venues, validates barcode lookup and rolls back invalid counts and receipt corrections
+2026-10-20T18:44:39.1054928Z  ✓ test/inventory-operations.test.ts > checks the whole stocktake shortage against the per-operation approval limit
+2026-10-20T18:44:39.2008077Z  ✓ test/inventory-operations.test.ts > requires explicit review of intervening stock movements and rejects stale previews
+2026-10-20T18:44:39.3584301Z  ✓ test/inventory-operations.test.ts > redacts previously privileged retry results after cost permission is revoked
+2026-10-20T18:44:39.5254572Z  ✓ test/inventory-operations.test.ts > blocks stocktakes while overlapping losses await a decision, including new requests after opening
+2026-10-20T18:44:39.7145940Z  ✓ test/inventory-operations.test.ts > guards receipt reversals by the whole receipt quantity and preserves a truthful ledger
+2026-10-20T18:44:39.7923998Z  ✓ test/inventory-operations.test.ts > prevents overlapping open stocktakes of the same items and permits a new count after finalization
+2026-10-20T18:44:39.8540724Z  ✓ test/inventory-operations.test.ts > applies a concurrently retried delivery receipt exactly once
+2026-10-20T18:44:39.8966668Z  ✓ test/inventory-operations.test.ts > allows only one overlapping stocktake to open concurrently
+2026-10-20T18:44:40.0434759Z  ✓ test/inventory-operations.test.ts > applies only one of two concurrent owner loss decisions
+2026-10-20T18:44:40.1755252Z  ✓ test/inventory-operations.test.ts > reconciles food allocations, preserves later deliveries and holds disposal out of sale
+2026-10-20T18:44:40.2194605Z  ✓ test/inventory-operations.test.ts > rejects invalid food allocation sums and overlapping generic counts without changing stock
+2026-10-20T18:44:40.3354210Z  ✓ test/inventory-operations.test.ts > requires before/after food evidence and applies concurrent approvals once
+2026-10-20T18:44:40.4014134Z  ✓ test/inventory-operations.test.ts > records an explicit owner photo exception before disposal approval
+2026-10-20T18:44:41.9932611Z  ✓ test/merchant.test.ts > owner creates venue, cashier has a separate device-scoped identity and cannot manage money or prices
+2026-10-20T18:44:42.0930748Z  ✓ test/merchant.test.ts > prices frozen server snapshots, refuses forged totals, unavailable extras, and conflicting retries
+2026-10-20T18:44:42.1261779Z  ✓ test/merchant.test.ts > payer code delivers a merchant checkout capability with no P2P charge
+2026-10-20T18:44:42.2221394Z  ✓ test/merchant.test.ts > locks revision at quote and requires an exact verified receipt before preparation
+2026-10-20T18:44:42.3389553Z  ✓ test/merchant.test.ts > deduplicates ready signaling and permits only the owner to approve exact full asset refund
+2026-10-20T18:44:42.4518753Z  ✓ test/merchant.test.ts > persists pending hashes and completes payment and refund after clients leave
+2026-10-20T18:44:42.5724435Z  ✓ test/merchant.test.ts > refreshes an expired quote for the same immutable cart and reconciles the original quoted transfer
+2026-10-20T18:44:42.7698329Z  ✓ test/merchant.test.ts > rejects transaction reuse and mismatches in every receipt field
+2026-10-20T18:44:43.2178812Z  ✓ test/merchant.test.ts > isolates cashier shift reports and revokes sessions on profile switch, PIN reset and terminal replacement 480ms
+2026-10-20T18:44:44.9335134Z  ✓ test/stock-reservations.test.ts > expires unsubmitted stock mathematically and refunds a late verified receipt without taking the next buyers hold 402ms
+2026-10-20T18:44:45.1815041Z  ✓ test/stock-reservations.test.ts > pins an on-time submitted unknown hash through quote expiry and blocks physical corrections then settles once
+2026-10-20T18:44:45.5783344Z  ✓ test/stock-reservations.test.ts > retains the tracked decision even if tracking is switched off after quote, and freezes untracked decisions 392ms
+2026-10-20T18:44:46.0685733Z  ✓ test/stock-reservations.test.ts > keeps a paid remote order reserved until acceptance and releases rejection without a sale 495ms
+2026-10-20T18:44:46.2675048Z  ✓ test/stock-reservations.test.ts > gives POS and remote quotes competing for the last item exactly one winner
+2026-10-20T18:44:46.4834691Z  ✓ test/stock-reservations.test.ts > releases a customer cancellation and refunds any subsequent payment rather than taking a new hold
+2026-10-20T18:44:46.7526378Z  ✓ test/stock-reservations.test.ts > subtracts pending losses once from availability and prevents loss, reversal and stocktake from touching held units
+2026-10-20T18:44:47.1425255Z  ✓ test/stock-reservations.test.ts > bounds active reservations per cashier and makes quote retries idempotent 390ms
+2026-10-20T18:44:47.3715153Z  ✓ test/stock-reservations.test.ts > releases a paid remote timeout without restoring or consuming physical stock
+2026-10-20T18:44:47.5955853Z  ✓ test/stock-reservations.test.ts > routes a predeployment paid remote order without a stock hold to refund instead of accepting it
+2026-10-20T18:44:47.8136971Z  ✓ test/stock-reservations.test.ts > settles a previously untracked quote using its original decision and releases a newer sibling reservation
+2026-10-20T18:44:48.0089530Z  ✓ test/stock-reservations.test.ts > allows either food disposal hold or POS reservation to claim the last portion, never both
+2026-10-20T18:44:48.2123887Z  ✓ test/stock-reservations.test.ts > keeps the day cutoff immutable while a payment confirms and leaves the cashier shift open
+2026-10-20T18:44:50.1188174Z  ✓ test/deposit-resolutions.test.ts > records an explicit unmatched decision and links an unreported deposit through normal settlement exactly once 503ms
+2026-10-20T18:44:50.4505075Z  ✓ test/deposit-resolutions.test.ts > distinguishes a canonical wrong amount from missing verification without treating an RPC outage as an invalid payment 332ms
+2026-10-20T18:44:50.8260794Z  ✓ test/deposit-resolutions.test.ts > creates a separate excess liability, prevents its use by another order and confirms one owner-authorized refund 376ms
+2026-10-20T18:44:51.2154769Z  ✓ test/deposit-resolutions.test.ts > isolates owner decisions and never confirms a submitted excess refund from a mismatching receipt 389ms
+2026-10-20T18:44:51.4465241Z  ✓ test/deposit-resolutions.test.ts > keeps two equal finalized token transfers in one transaction as separate liabilities
+2026-10-20T18:44:51.6748287Z  ✓ test/deposit-resolutions.test.ts > arbitrates concurrent verification of one hash across orders without two sales
+2026-10-20T18:44:51.8295296Z  ✓ test/deposit-resolutions.test.ts > returns unique historical quotes in the owner lookup and excludes checkout access tokens
+2026-10-20T18:44:52.0686581Z  ✓ test/deposit-resolutions.test.ts > freezes the reported refund hash to its original authorized quote, including recovery from quote history
+2026-10-20T18:44:53.5844333Z  ✓ test/claim.test.ts > exactly one of two concurrent claimers wins
+2026-10-20T18:44:53.6346332Z  ✓ test/claim.test.ts > claimed code can never be claimed again; invalid & self-claim give the SAME generic error
+2026-10-20T18:44:53.7134106Z  ✓ test/claim.test.ts > throttles after 10 failed attempts per wallet
+2026-10-20T18:44:53.7137537Z  ✓ test/claim.test.ts > malformed body (missing code) returns 404 CODE_UNAVAILABLE and counts toward throttle
+2026-10-20T18:44:53.7139852Z  ✓ test/claim.test.ts > malformed body (wrong code shape) returns 404 CODE_UNAVAILABLE and counts toward throttle
+2026-10-20T18:44:53.7465162Z  ✓ test/claim.test.ts > malformed attempts count toward throttle limit
+2026-10-20T18:44:53.7685007Z  ✓ test/claim.test.ts > claim with amount creates the charge atomically — payer sees approval immediately
+2026-10-20T18:44:53.7925726Z  ✓ test/claim.test.ts > claim priced in fiat stores the converted amount, the frozen quote, and the open shift
+2026-10-20T18:44:53.8566787Z  ✓ test/claim.test.ts > claim priced in luna is also stamped with the open shift
+2026-10-20T18:44:53.8735031Z  ✓ test/claim.test.ts > refuses a fiat-priced claim when no rate is available
+2026-10-20T18:44:53.9415271Z  ✓ test/claim.test.ts > a claim retry across a rate move replays the original charge, never a second one
+2026-10-20T18:44:54.0007888Z  ✓ test/claim.test.ts > a claim retry replays the stored answer even when the rate provider is now unreachable
+2026-10-20T18:44:54.0422376Z  ✓ test/claim.test.ts > a claim priced in an unsupported currency is rejected and creates nothing
+2026-10-20T18:44:54.0957019Z  ✓ test/claim.test.ts > a fiat claim that 503s when the rate feed blips succeeds on retry with the same key once it recovers
+2026-10-20T18:44:55.7465268Z  ✓ test/tasks.test.ts > persists a single scheduled checklist and snapshots its instructions
+2026-10-20T18:44:56.0094000Z  ✓ test/tasks.test.ts > restricts templates to managers, isolates venues and protects retry and review 312ms
+2026-10-20T18:44:56.1114922Z  ✓ test/tasks.test.ts > backfills local daily occurrences after restart without duplicating daylight-saving day
+2026-10-20T18:44:56.2028908Z  ✓ test/tasks.test.ts > blocks required image submissions before files exist
+2026-10-20T18:44:56.3510366Z  ✓ test/tasks.test.ts > materializes one task for an existing shift and worker submits it for independent review
+2026-10-20T18:44:56.3926043Z  ✓ test/tasks.test.ts > does not backfill paused daily deadlines when a template is enabled again
+2026-10-20T18:44:56.5269243Z  ✓ test/tasks.test.ts > does not create tasks for shifts that ended while the template was paused
+2026-10-20T18:44:58.2577884Z  ✓ test/merchantRecovery.test.ts > cancels expired checkout and credits late transfer to refund after shift closure 404ms
+2026-10-20T18:44:58.4460340Z  ✓ test/merchantRecovery.test.ts > edits expired checkout and refunds an old revision transfer using original paid snapshot
+2026-10-20T18:44:58.6996183Z  ✓ test/merchantRecovery.test.ts > renews expired approved refund and accepts old proof while freezing the first submitted intent
+2026-10-20T18:44:58.8559108Z  ✓ test/merchantRecovery.test.ts > records funds mined after expiry as requiring full refund instead of preparing the order
+2026-10-20T18:44:59.1033510Z  ✓ test/merchantRecovery.test.ts > reconciles a corrected payment and refund hash without signing again or losing earlier attempts
+2026-10-20T18:44:59.4357438Z  ✓ test/merchantRecovery.test.ts > does not let an already assigned transaction exclude a later valid attempt 332ms
+2026-10-20T18:44:59.6251798Z  ✓ test/merchantRecovery.test.ts > decides fulfillment from the verified revision, preserving cancellation=false
+2026-10-20T18:44:59.7763126Z  ✓ test/merchantRecovery.test.ts > decides fulfillment from the verified revision, preserving cancellation=true
+2026-10-20T18:45:01.7578036Z  ✓ test/schedules.test.ts > publishes an immutable weekly version, exposes worker assignments and explicit coverage gaps without opening cashier shifts 619ms
+2026-10-20T18:45:02.5478292Z  ✓ test/schedules.test.ts > rejects employee overlap and foreign employees, while replacement approval publishes the next schedule version 791ms
+2026-10-20T18:45:02.6296346Z  ✓ test/schedules.test.ts > validates schedule boundaries in the venue timezone across the daylight-saving transition
+2026-10-20T18:45:02.9248616Z  ✓ test/schedules.test.ts > keeps pending requests visible beside drafts, rejects inactive substitutes and superseded publication
+2026-10-20T18:45:02.9941117Z  ✓ test/schedules.test.ts > serializes concurrent weekly drafts and never republishes an older version over a newer one
+2026-10-20T18:45:04.4575006Z  ✓ test/merchant-operations.test.ts > owner gets explicit operations window, unknown presence and empty exception page without credentials
+2026-10-20T18:45:04.7506430Z  ✓ test/merchant-operations.test.ts > dashboard permission is live, session polling records terminal presence and exception actions remain owner only
+2026-10-20T18:45:05.1384139Z  ✓ test/merchant-operations.test.ts > recheck keeps an unknown hash unverified, persists safe diagnostics, and replays without spending another rate slot 388ms
+2026-10-20T18:45:05.6015650Z  ✓ test/merchant-operations.test.ts > counts received atomic payments separately from accepted snapshot sales at their actual event time 465ms
+2026-10-20T18:45:07.1835934Z  ✓ test/readiness.test.ts > exposes frozen paid line quantities and denies collection before readiness
+2026-10-20T18:45:07.4555641Z  ✓ test/readiness.test.ts > tracks partial quantities, allows correction, then emits a single signal and immutable retry
+2026-10-20T18:45:07.8047428Z  ✓ test/readiness.test.ts > rejects stale concurrent updates, invalid quantities, financial changes and other venues 347ms
+2026-10-20T18:45:08.0942514Z  ✓ test/readiness.test.ts > uses paid snapshot lines, marks all through legacy route, and trusts genuine legacy READY rows
+2026-10-20T18:45:08.2639642Z  ✓ test/readiness.test.ts > denies new work after closing shift or revoking employee but replays a committed intent
+2026-10-20T18:45:08.4980549Z  ✓ test/readiness.test.ts > prepares a real paid cart without changing payment, amount or stock, then enforces remote proof and single pickup
+2026-10-20T18:45:11.5917974Z  ✓ test/stock-reward-reservations.test.ts > accepts a reward only when stock is available, atomically spends stamps and never consumes twice 1786ms
+2026-10-20T18:45:13.3766206Z  ✓ test/cash-refund.test.ts > records one full physical refund, blocks pickup and does not return stock 431ms
+2026-10-20T18:45:13.6863560Z  ✓ test/cash-refund.test.ts > counts a request only as a liability and counts a confirmed payout once in cash, fiat and product reports 310ms
+2026-10-20T18:45:14.0693847Z  ✓ test/cash-refund.test.ts > rejects partial/false confirmations and foreign actors, keeps the original reason and detects changed retry payloads 383ms
+2026-10-20T18:45:14.2874769Z  ✓ test/cash-refund.test.ts > serializes concurrent confirmations and rechecks revoked access before retry
+2026-10-20T18:45:14.5529494Z  ✓ test/cash-refund.test.ts > keeps an owner payout out of the original closed shift and records it on the actual payout day without an open shift
+2026-10-20T18:45:14.7565505Z  ✓ test/cash-refund.test.ts > serializes a request against pickup and preserves the winning order state
+2026-10-20T18:45:16.2525334Z  ✓ test/recipes.test.ts > versions exact recipes, rejects wrong dimensions and logical cycles, and isolates venue references
+2026-10-20T18:45:16.5849564Z  ✓ test/recipes.test.ts > freezes recipe usage at checkout and never restores consumed ingredients on a refund 331ms
+2026-10-20T18:45:16.8285997Z  ✓ test/recipes.test.ts > freezes weighted receipt cost internally while hiding it from checkout and catalog readers
+2026-10-20T18:45:17.1214395Z  ✓ test/recipes.test.ts > holds recipe ingredients for remote payment and consumes its frozen version only at acceptance
+2026-10-20T18:45:17.1844886Z  ✓ test/recipes.test.ts > values milligram receipts from an exact total line cost and keeps fractional unit cost
+2026-10-20T18:45:18.5119246Z  ✓ test/chargeRequest.test.ts > shared insertCharge freezes a fiat quote onto the row
+2026-10-20T18:45:18.5120708Z  ✓ test/chargeRequest.test.ts > shared insertCharge accepts a luna-only price with empty fiat fields
+2026-10-20T18:45:18.6100998Z  ✓ test/chargeRequest.test.ts > one_session_per_request rejects a second request on the same session but allows many null sessions
+2026-10-20T18:45:18.6288804Z  ✓ test/chargeRequest.test.ts > POST /v1/charge-requests prices from fiat and freezes the quote on the row
+2026-10-20T18:45:18.6406941Z  ✓ test/chargeRequest.test.ts > GET preview returns the amount and receiver name, never the id, receiverUserId, or full address
+2026-10-20T18:45:18.6768288Z  ✓ test/chargeRequest.test.ts > preview of an unknown id is 404; expired and accepted requests give different, recognizable states
+2026-10-20T18:45:18.7015072Z  ✓ test/chargeRequest.test.ts > accept creates a session and a charge stamped with the shift open at acceptance, not at issuance
+2026-10-20T18:45:18.7331896Z  ✓ test/chargeRequest.test.ts > a second accept of the same request gets 409
+2026-10-20T18:45:18.7333399Z  ✓ test/chargeRequest.test.ts > the issuer cannot accept their own charge request
+2026-10-20T18:45:18.7559254Z  ✓ test/chargeRequest.test.ts > sweeper deletes expired unmaterialized requests but leaves materialized (accepted) ones
+2026-10-20T18:45:20.7394545Z  ✓ test/history-purchases.test.ts > explains a seven-day purchase projection and keeps losses optional without creating an order 720ms
+2026-10-20T18:45:21.0024965Z  ✓ test/history-purchases.test.ts > refuses insufficient history, future periods and access from another venue owner
+2026-10-20T18:45:21.2714279Z  ✓ test/history-purchases.test.ts > nets returned production ingredients without treating a reversed output as new demand
+2026-10-20T18:45:22.9399784Z  ✓ test/order-context.test.ts > keeps staff context and history separate from customer checkout and freezes identical retries 337ms
+2026-10-20T18:45:23.1377256Z  ✓ test/order-context.test.ts > serializes stale edits, rejects price/status fields and preserves the order promises
+2026-10-20T18:45:23.5035888Z  ✓ test/order-context.test.ts > denies other venues, customer identities, revoked employees and edits after closing the shift 367ms
+2026-10-20T18:45:23.6530833Z  ✓ test/order-context.test.ts > never exposes internal notes, priority reasons or delays to the remote customer DTO or list
+2026-10-20T18:45:25.7274344Z  ✓ test/economics.test.ts > reports historical ingredient margin, keeps consumed cost after a refund and separates loss 745ms
+2026-10-20T18:45:25.9369967Z  ✓ test/economics.test.ts > does not invent costs for unknown opening stock and validates the reporting window
+2026-10-20T18:45:26.2286109Z  ✓ test/economics.test.ts > allocates a shared ingredient and order discount exactly and groups by the frozen category
+2026-10-20T18:45:26.5263003Z  ✓ test/economics.test.ts > charges the produced portion at its transferred cost without charging production inputs again 302ms
+2026-10-20T18:45:26.8145622Z  ✓ test/merchantPayments.test.ts > merchant payment gateway > publishes only fresh configured display rates and refreshes refunds without repricing them
+2026-10-20T18:45:26.8149173Z  ✓ test/merchantPayments.test.ts > merchant payment gateway > freezes an exact atomic Polygon quote using the venue fiat rate
+2026-10-20T18:45:26.8151152Z  ✓ test/merchantPayments.test.ts > settles only exact canonical finalized Polygon transfers, never submitted hashes alone
+2026-10-20T18:45:26.8152984Z  ✓ test/merchantPayments.test.ts > verifies NIM memo, exact value and execution in a canonical batch finalized by a macro block
+2026-10-20T18:45:26.8154467Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with chain id
+2026-10-20T18:45:26.8155579Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with failed execution
+2026-10-20T18:45:26.8156547Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with wrong sender
+2026-10-20T18:45:26.8157477Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with wrong token
+2026-10-20T18:45:26.8158677Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with wrong recipient
+2026-10-20T18:45:26.8159954Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with wrong amount
+2026-10-20T18:45:26.8161403Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with removed log
+2026-10-20T18:45:26.8162397Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with reorg
+2026-10-20T18:45:26.8163322Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with unfinalized
+2026-10-20T18:45:26.8164357Z  ✓ test/merchantPayments.test.ts > never settles a Polygon receipt with historical matching transfer
+2026-10-20T18:45:26.8165546Z  ✓ test/merchantPayments.test.ts > recognizes exact finalized funds arriving after quote expiry for safe reconciliation
+2026-10-20T18:45:28.3329057Z  ✓ test/menu-versions.test.ts > saves a private draft, publishes atomically, restores as a new version and rejects stale edits
+2026-10-20T18:45:28.4662544Z  ✓ test/menu-versions.test.ts > rejects stale drafts after live availability, duplicate identities and foreign products without changing live menu
+2026-10-20T18:45:28.5635196Z  ✓ test/menu-versions.test.ts > cashiers cannot inspect drafts; delegated manager access is revoked live
+2026-10-20T18:45:28.5963802Z  ✓ test/menu-versions.test.ts > concurrent venues cannot claim and overwrite one shared product identity
+2026-10-20T18:45:28.6444475Z  ✓ test/menu-versions.test.ts > opening an empty workspace does not lock currency and draft retries return one revision
+2026-10-20T18:45:30.3484970Z  ✓ test/stock-bindings.test.ts > freezes POS and remote shared stock requirements without changing balances or existing quotes 425ms
+2026-10-20T18:45:30.5451938Z  ✓ test/stock-bindings.test.ts > rejects foreign resources, ambiguous mappings and unauthorized legacy edits
+2026-10-20T18:45:30.6444148Z  ✓ test/stock-bindings.test.ts > saves publishes and restores complete resource mappings without changing existing loyalty promises
+2026-10-20T18:45:30.8835980Z  ✓ test/stock-bindings.test.ts > reserves last tracked portions at quote and consumes them once on verified POS settlement
+2026-10-20T18:45:32.4684636Z  ✓ test/production.test.ts > atomically consumes ingredients and records actual yield, loss, safe retries and one reversal
+2026-10-20T18:45:32.6624285Z  ✓ test/production.test.ts > rolls back shortages and failed corrections, rejects cycles and foreign output resources
+2026-10-20T18:45:33.1224559Z  ✓ test/production.test.ts > transfers exact ingredient cost to finished portions and sells portions without consuming raw stock twice 460ms
+2026-10-20T18:45:33.2528229Z  ✓ test/production.test.ts > keeps production expiry provenance and refuses reversal using a later replacement batch
+2026-10-20T18:45:35.0765616Z  ✓ test/finance.test.ts > reads one coherent owner report and preserves the discounted sale after a stock-related refund decision and later confirmation 543ms
+2026-10-20T18:45:35.4373360Z  ✓ test/finance.test.ts > rejects non-owners and invalid ranges, isolates venues, and does not consult current exchange rates 361ms
+2026-10-20T18:45:35.6632887Z  ✓ test/finance.test.ts > observes an atomic sale and receipt together while a payment is being verified
+2026-10-20T18:45:35.9457017Z  ✓ test/finance.test.ts > backfills proven historical acceptance without fabricating acceptance for ambiguous legacy payments
+2026-10-20T18:45:37.4874233Z  ✓ test/inventory-cost-history.test.ts > preserves exact historical issue costs after a later differently priced receipt and retries once
+2026-10-20T18:45:37.6363786Z  ✓ test/inventory-cost-history.test.ts > keeps unknown issue costs unknown and reverses the original value rather than the current average
+2026-10-20T18:45:37.8435511Z  ✓ test/inventory-cost-history.test.ts > checks live cost permission, isolates venues and keeps operational movement responses free of costs
+2026-10-20T18:45:37.9008833Z  ✓ test/inventory-cost-history.test.ts > locks the venue currency after stock exists so a later delivery cannot mix currencies
+2026-10-20T18:45:38.0365627Z  ✓ test/inventory-cost-history.test.ts > does not turn legacy currencyless averages or production batches into known new costs
+2026-10-20T18:45:38.1083624Z  ✓ test/inventory-cost-history.test.ts > keeps receipts and corrections from a legacy differently denominated delivery unknown
+2026-10-20T18:45:39.5355157Z  ✓ test/bundles.test.ts > persists bundle references and prevents a legacy edit deleting a referenced variant
+2026-10-20T18:45:39.6736642Z  ✓ test/bundles.test.ts > validates complete draft references and rejects grouped or bundle loyalty rewards, preserving active promises
+2026-10-20T18:45:39.9623816Z  ✓ test/bundles.test.ts > enforces the same required choices and child availability in POS and remote orders with frozen composition
+2026-10-20T18:45:40.2080244Z  ✓ test/bundles.test.ts > counts a paid bundle order once for loyalty and leaves reward prices independent
+2026-10-20T18:45:40.3543113Z  ✓ test/bundles.test.ts > keeps bundle component references within the venue and requires menu permission
+2026-10-20T18:45:42.3306818Z  ✓ test/production-proposals.test.ts > projects batches from history and checks reserved ingredients without changing stock 660ms
+2026-10-20T18:45:43.0495702Z  ✓ test/production-proposals.test.ts > refuses unknown history, cyclic or foreign recipes and unauthorized access 719ms
+2026-10-20T18:45:43.4115517Z  ✓ test/production-proposals.test.ts > blocks a rounded-up batch that would exceed remaining finished-stock capacity 366ms
+2026-10-20T18:45:44.8155856Z  ✓ test/charge.test.ts > receiver creates charge; session moves to AWAITING_PAYER_APPROVAL; recipient copied
+2026-10-20T18:45:44.8524667Z  ✓ test/charge.test.ts > payer cannot create charge; charge is immutable; strangers get 404
+2026-10-20T18:45:44.8694804Z  ✓ test/charge.test.ts > receiver view hides payer profile, shows neutral state
+2026-10-20T18:45:44.8966465Z  ✓ test/charge.test.ts > prices a charge from fiat and stamps the open shift
+2026-10-20T18:45:44.9717571Z  ✓ test/charge.test.ts > refuses a fiat price when no rate is available
+2026-10-20T18:45:45.0467778Z  ✓ test/charge.test.ts > a retry across a rate move replays the original charge, never a 409 or a second charge
+2026-10-20T18:45:45.1245897Z  ✓ test/charge.test.ts > a retry replays the stored answer even when the rate provider is now unreachable
+2026-10-20T18:45:45.1460834Z  ✓ test/charge.test.ts > a charge priced in an unsupported currency is rejected and creates nothing
+2026-10-20T18:45:46.8797654Z  ✓ test/cash-report.test.ts > separates cash due from tendered notes and crypto atomic without duplicating recognized sales 413ms
+2026-10-20T18:45:47.1395977Z  ✓ test/cash-report.test.ts > attributes cash to its recording day, includes product and shift sales, and preserves a closed cutoff
+2026-10-20T18:45:47.3857128Z  ✓ test/cash-report.test.ts > rejects a foreign owner and cashier, and never fabricates cash in an empty historical range
+2026-10-20T18:45:47.5736051Z  ✓ test/cash-report.test.ts > uses the venue timezone and boundary hour for cash around a daylight-saving day
+2026-10-20T18:45:49.3310929Z  ✓ test/cash-sale.test.ts > records physical cash, exact change and one stock issue without a blockchain payment 406ms
+2026-10-20T18:45:49.5384344Z  ✓ test/cash-sale.test.ts > rejects insufficient tender and stale revisions without consuming stock or creating a receipt
+2026-10-20T18:45:49.7354869Z  ✓ test/cash-sale.test.ts > serializes concurrent retries to one receipt and one stock issue
+2026-10-20T18:45:49.8727074Z  ✓ test/cash-sale.test.ts > does not allow an owner to record a cashier cash sale
+2026-10-20T18:45:50.1946727Z  ✓ test/cash-sale.test.ts > rejects a new sale after shift closure but recovers an already committed retry 322ms
+2026-10-20T18:45:50.3405454Z  ✓ test/cash-sale.test.ts > rejects cash after expired wallet quote history and exposes that restriction to the cashier
+2026-10-20T18:45:50.5084775Z  ✓ test/cash-sale.test.ts > rolls back a receipt and stock issue when an immutable sale already conflicts
+2026-10-20T18:45:50.6795480Z  ✓ test/cash-sale.test.ts > rejects cash with insufficient stock and supports resources without tracking
+2026-10-20T18:45:50.9584079Z  ✓ test/cash-sale.test.ts > isolates receipts and cash confirmation between venues
+2026-10-20T18:45:52.5426012Z  ✓ test/stock-menu.test.ts > shows dependent variants and bundles and restores stock without overriding a schedule or manual block 330ms
+2026-10-20T18:45:52.8917154Z  ✓ test/stock-menu.test.ts > preserves a prior reservation, blocks new quotes, and creates a single owner refund obligation for affected accepted work 348ms
+2026-10-20T18:45:52.9835040Z  ✓ test/stock-menu.test.ts > keeps a complete alternative recipe selectable when the base ingredient is missing
+2026-10-20T18:45:54.2566661Z  ✓ test/monitor.test.ts > SUBMITTED → CONFIRMING on inclusion → CONFIRMED after macro block, receipts written
+2026-10-20T18:45:54.3025720Z  ✓ test/monitor.test.ts > two overlapping monitorTick runs on the same transaction write exactly two receipts
+2026-10-20T18:45:54.3144839Z  ✓ test/monitor.test.ts > expired transaction → FAILED
+2026-10-20T18:45:54.3263676Z  ✓ test/monitor.test.ts > long-pending transaction → DELAYED, not FAILED
+2026-10-20T18:45:54.3955873Z  ✓ test/monitor.test.ts > reconciles a lost hash by recipient + data token
+2026-10-20T18:45:54.5145210Z  ✓ test/monitor.test.ts > history lists an in-flight payment as pending before the receipt exists
+2026-10-20T18:45:54.7159665Z  ✓ test/monitor.test.ts > startMonitor skips a tick that would overlap a still-running one
+2026-10-20T18:45:54.7160578Z  ✓ test/monitor.test.ts > centsFromLuna is the integer inverse of priceInLuna, to the cent
+2026-10-20T18:45:56.2854822Z  ✓ test/inventory-lots.test.ts > allocates earliest expiry before unknown dates, preserves expired stock and stable metadata retries
+2026-10-20T18:45:56.4117146Z  ✓ test/inventory-lots.test.ts > cannot reverse a receipt using stock belonging to a different lot
+2026-10-20T18:45:56.5065958Z  ✓ test/inventory-lots.test.ts > reconciles opposite lot differences atomically without changing total stock and rejects mismatched totals
+2026-10-20T18:45:56.5794340Z  ✓ test/inventory-lots.test.ts > rejects foreign lot metadata and a loss attributed to a foreign lot
+2026-10-20T18:45:56.8104694Z  ✓ test/inventory-lots.test.ts > protects a specific lot held by a pending loss while allowing consumption of other lots
+2026-10-20T18:45:56.8316472Z  ✓ test/inventory-lots.test.ts > backfills existing physical balances without inventing expiry, receipt time or historical movement attribution
+2026-10-20T18:45:58.3495277Z  ✓ test/inventory.test.ts > persists stock movements and reverses a mistake exactly once
+2026-10-20T18:45:58.5266307Z  ✓ test/inventory.test.ts > enforces revisions, nonnegative stock, bounded history and isolated venues
+2026-10-20T18:45:58.6364899Z  ✓ test/inventory.test.ts > checks live inventory permissions and keeps stock readable by ordinary cashiers
+2026-10-20T18:46:00.0233933Z  ✓ test/cashierLock.test.ts > setting a PIN never stores it in the clear
+2026-10-20T18:46:00.0460501Z  ✓ test/cashierLock.test.ts > changing a PIN without currentPin is rejected; the correct currentPin succeeds
+2026-10-20T18:46:00.0462572Z  ✓ test/cashierLock.test.ts > enabling the lock without a PIN set is rejected with 409
+2026-10-20T18:46:00.0641135Z  ✓ test/cashierLock.test.ts > unlocking with the correct PIN works; the wrong PIN is 401
+2026-10-20T18:46:00.1175882Z  ✓ test/cashierLock.test.ts > PIN rate limiting kicks in after repeated failures, and does not throttle code claim
+2026-10-20T18:46:00.1404371Z  ✓ test/cashierLock.test.ts > refunds, export, shift close and PATCH /v1/me all return 423 CASHIER_LOCKED while locked
+2026-10-20T18:46:00.1703499Z  ✓ test/cashierLock.test.ts > accepting a payment and GET .../report both keep working while locked
+2026-10-20T18:46:00.7645199Z  ✓ test/finance-ledger.test.ts > matches a hand-calculated discounted sale, duplicate scanner observation, extra deposit, pending return and confirmed sale refund
+2026-10-20T18:46:00.7646806Z  ✓ test/finance-ledger.test.ts > exports the exact same scoped ledger and sums without private data or interpreting text as spreadsheet formulas
+2026-10-20T18:46:00.7648182Z  ✓ test/finance-ledger.test.ts > keeps current liabilities outside the requested flow range and never uses an extra refund as a fiat sale reversal
+2026-10-20T18:46:00.7650274Z  ✓ test/finance-ledger.test.ts > marks unresolved historical sale evidence and missing submission times without inventing zero prices or dates
+2026-10-20T18:46:00.7651673Z  ✓ test/finance-ledger.test.ts > keeps old outstanding liabilities in the current snapshot while limiting unallocated receipts to the selected range
+2026-10-20T18:46:00.7652909Z  ✓ test/finance-ledger.test.ts > keeps an undated deposit visible as unknown instead of assigning it to the selected range
+2026-10-20T18:46:02.2943807Z  ✓ test/production-draft-execute.test.ts > executes a saved plan with measured yield exactly once and persists its batch link
+2026-10-20T18:46:02.3735955Z  ✓ test/production-draft-execute.test.ts > keeps a draft unchanged when ingredient validation rolls back production
+2026-10-20T18:46:02.5457661Z  ✓ test/production-draft-execute.test.ts > serializes repeat execution and cancellation against one saved draft
+2026-10-20T18:46:02.8092507Z  ✓ test/production-draft-execute.test.ts > rejects stale or foreign execution and redacts costs on live permission checks
+2026-10-20T18:46:04.3476837Z  ✓ test/purchasing.test.ts > explains low-stock suggestions, edits drafts and approves exactly one delivery with safe partial receipts
+2026-10-20T18:46:04.5338299Z  ✓ test/purchasing.test.ts > isolates venues, rejects foreign resources and suppliers and checks live management permission
+2026-10-20T18:46:04.7309809Z  ✓ test/purchasing.test.ts > includes live reservations and pending losses in the explained replenishment quantity
+2026-10-20T18:46:06.1395693Z  ✓ test/refund.test.ts > a full refund creates a session and a charge whose recipient is the original sender
+2026-10-20T18:46:06.1736681Z  ✓ test/refund.test.ts > two partial refunds that together fit inside the original amount both succeed
+2026-10-20T18:46:06.2088212Z  ✓ test/refund.test.ts > partial refunds summing past the original amount are rejected with 409
+2026-10-20T18:46:06.2090170Z  ✓ test/refund.test.ts > refunding a payment that is not CONFIRMED is rejected with 409
+2026-10-20T18:46:06.2199330Z  ✓ test/refund.test.ts > a refund initiated by the original payer is rejected with 403
+2026-10-20T18:46:06.2494891Z  ✓ test/refund.test.ts > the refund charge is stamped with the vendor (payer of the refund) shift, not the customer's
+2026-10-20T18:46:06.2495945Z  ✓ test/refund.test.ts > one_refund_per_session rejects a second refund row on the same session
+2026-10-20T18:46:07.8796843Z  ✓ test/merchantPermissions.test.ts > owner delegates menu rights to a manager and revokes them in an active session
+2026-10-20T18:46:08.0369957Z  ✓ test/merchantPermissions.test.ts > manager title alone grants no rights; owner changes require a reason and history hides credentials
+2026-10-20T18:46:09.5460894Z  ✓ test/menu-images.test.ts > keeps uploaded images private until publication, retries once, and unpublishes removed images
+2026-10-20T18:46:09.5877582Z  ✓ test/menu-images.test.ts > rejects foreign image references and invalid image uploads without making them public
+2026-10-20T18:46:09.6268001Z  ✓ test/menu-images.test.ts > cleans abandoned uploads after the grace period while keeping menu history images
+2026-10-20T18:46:11.5002448Z  ✓ test/taskPhotos.test.ts > requires persisted before/after evidence, retries safely and keeps reads private 510ms
+2026-10-20T18:46:11.5003837Z  ✓ test/taskPhotos.test.ts > returns a size error instead of an internal failure for oversized photo requests
+2026-10-20T18:46:13.1959341Z  ✓ test/worktime.test.ts > records work and breaks independently from the cashier shift and retries a finished operation 389ms
+2026-10-20T18:46:13.3482649Z  ✓ test/worktime.test.ts > keeps the original hours until an authorised correction is approved and exposes its history to the worker
+2026-10-20T18:46:13.4856476Z  ✓ test/worktime.test.ts > rejects overlapping approved corrections and records midnight / DST instants without guessing local offsets
+2026-10-20T18:46:15.1465685Z  ✓ test/discounts.test.ts > requires independent approval above staff limits, freezes discounted snapshots and retries 325ms
+2026-10-20T18:46:15.3244268Z  ✓ test/discounts.test.ts > auto-applies only an authorised employee discount within both owner limits
+2026-10-20T18:46:15.4435612Z  ✓ test/discounts.test.ts > applies the allowed percentage at a half-cent boundary without demanding an extra approval
+2026-10-20T18:46:17.1629855Z  ✓ test/menu-snapshots.test.ts > preserves a paid order and valid quote when a new menu changes the same variant price 417ms
+2026-10-20T18:46:17.2386591Z  ✓ test/menu-snapshots.test.ts > rejects a menu removing an active loyalty variant and leaves all published products unchanged
+2026-10-20T18:46:18.6995739Z  ✓ test/production-drafts.test.ts > persists a planning draft across reads without recording production or changing stock
+2026-10-20T18:46:18.9510586Z  ✓ test/production-drafts.test.ts > isolates draft access and validates planning assumptions without exposing recipe costs
+2026-10-20T18:46:20.6298969Z  ✓ test/owner-release-race.test.ts > serializes owner rejection with confirmed payment: owner first 417ms
+2026-10-20T18:46:20.8682267Z  ✓ test/owner-release-race.test.ts > serializes owner rejection with confirmed payment: verification first
+2026-10-20T18:46:22.5002519Z  ✓ test/handover.test.ts > preserves a pending handover without a successor and freezes retries for owner audit 304ms
+2026-10-20T18:46:22.8521218Z  ✓ test/handover.test.ts > lets the named successor acknowledge once and isolates venues 393ms
+2026-10-20T18:46:23.1330935Z  ✓ test/wallet-discovery-source.test.ts > verifies a NIM deposit against canonical transactions and macro finality, and rejects the wrong network
+2026-10-20T18:46:23.1339572Z  ✓ test/wallet-discovery-source.test.ts > reads finalized Polygon Transfer events and paginates multiple deposits in the same block
+2026-10-20T18:46:23.1340909Z  ✓ test/wallet-discovery-source.test.ts > fails closed when a log belongs to another token or network
+2026-10-20T18:46:23.4159827Z  ✓ test/merchantNotifications.test.ts > persists signed bytes before broadcast and retries those same bytes after uncertain delivery
+2026-10-20T18:46:23.4161795Z  ✓ test/merchantNotifications.test.ts > does not sign or broadcast when the durable budget refuses another reservation
+2026-10-20T18:46:23.4163149Z  ✓ test/merchantNotifications.test.ts > signs an independently verifiable one-luna notification using only the operator key
+2026-10-20T18:46:24.8541043Z  ✓ test/balances.test.ts > balance covers the charge: sufficient true, no shortfall
+2026-10-20T18:46:24.8965661Z  ✓ test/balances.test.ts > balance is short: sufficient false with the exact shortfall
+2026-10-20T18:46:24.9237929Z  ✓ test/balances.test.ts > unreadable balance: sufficient null, always 200, never a 5xx
+2026-10-20T18:46:24.9496481Z  ✓ test/balances.test.ts > missing balances dependency behaves as unknown, not an error
+2026-10-20T18:46:24.9736044Z  ✓ test/balances.test.ts > the receiver asking for the payer balance gets 403
+2026-10-20T18:46:24.9959490Z  ✓ test/balances.test.ts > a stranger asking for someone else's charge gets 404
+2026-10-20T18:46:26.4796873Z  ✓ test/wallet-discovery.test.ts > discovers different deposits without merging equal amounts, preserves checkpoint on RPC failure and updates confirmation
+2026-10-20T18:46:26.5172227Z  ✓ test/wallet-discovery.test.ts > does not commit a page arriving after the owner paused monitoring
+2026-10-20T18:46:28.0286964Z  ✓ test/production-draft-edit.test.ts > edits one revision once, preserves stale conflicts and cancels without stock movements
+2026-10-20T18:46:28.1703472Z  ✓ test/production-draft-edit.test.ts > allows only one writer per revision, keeps cancellation idempotent and isolates mutations
+2026-10-20T18:46:29.5521045Z  ✓ test/hardening.test.ts > zod validation errors are 400 with stable shape, no stack leak
+2026-10-20T18:46:54.4073438Z  ✓ test/hardening.test.ts > malformed uuid in a path param is 400, not 500
+2026-10-20T18:46:54.4074216Z  ✓ test/hardening.test.ts > unknown routes are 404 JSON with the error envelope
+2026-10-20T18:46:54.4074930Z  ✓ test/hardening.test.ts > unexpected errors are 500 without internals
+2026-10-20T18:46:54.4075869Z  ✓ test/hardening.test.ts > production refuses to start with no JWT_SECRET / CODE_PEPPER set, naming both 1595ms
+2026-10-20T18:46:54.4077068Z  ✓ test/hardening.test.ts > production refuses to start when JWT_SECRET is the dev default literal, even if explicitly set 1619ms
+2026-10-20T18:46:54.4078314Z  ✓ test/hardening.test.ts > production refuses to start when CODE_PEPPER is the dev default literal, even if explicitly set 1538ms
+2026-10-20T18:46:54.4079916Z  ✓ test/hardening.test.ts > non-production stays unaffected by the secrets gate even with no secrets set 20025ms
+2026-10-20T18:46:55.6644155Z  ✓ test/sweeper.test.ts > closes expired codes and timed-out claims, emits events
+2026-10-20T18:46:55.6732093Z  ✓ test/sweeper.test.ts > purges expired idempotency records, stale claim attempts, and used/stale auth nonces — keeping fresh rows
+2026-10-20T18:46:57.2134449Z  ✓ test/day-close.test.ts > requires explicit carry-forward, captures immutable cutoff and retries a close safely
+2026-10-20T18:46:57.2876762Z  ✓ test/day-close.test.ts > rejects a stale preview and foreign access, records owner exception and serializes duplicate day closes
+2026-10-20T18:46:57.9057287Z  ✓ test/menu-schedule-rules.test.ts > serves an overnight window across a weekday and both occurrences of the DST repeated hour
+2026-10-20T18:46:57.9059197Z  ✓ test/menu-schedule-rules.test.ts > date closures override incoming overnight windows and timed return respects recurring restrictions
+2026-10-20T18:46:57.9060527Z  ✓ test/menu-schedule-rules.test.ts > never restores manually missing stock and removes scheduled variants from new cart options only
+2026-10-20T18:46:57.9061665Z  ✓ test/menu-schedule-rules.test.ts > rejects invalid zones, duplicate weekdays and impossible calendar dates
+2026-10-20T18:46:57.9062595Z  ✓ test/menu-schedule-rules.test.ts > a single date exception does not close every other date
+2026-10-20T18:46:57.9063549Z  ✓ test/menu-schedule-rules.test.ts > propagates a paused component to its fixed bundle and required choices
+2026-10-20T18:46:59.5207112Z  ✓ test/menu-schedule.test.ts > persists effective POS availability, retries once and preserves an already issued quote 360ms
+2026-10-20T18:47:00.9585162Z  ✓ test/auth.test.ts > challenge → verify issues JWT and creates profile
+2026-10-20T18:47:01.1015195Z  ✓ test/auth.test.ts > rejects bad signature and reused nonce
+2026-10-20T18:47:01.1025298Z  ✓ test/auth.test.ts > protected route rejects missing token
+2026-10-20T18:47:01.1085208Z  ✓ test/auth.test.ts > the signed message names the origin and is built once for both endpoints
+2026-10-20T18:47:01.9131484Z  ✓ test/idempotency.test.ts > executes once and replays stored response
+2026-10-20T18:47:01.9133068Z  ✓ test/idempotency.test.ts > rejects key reuse with different payload
+2026-10-20T18:47:01.9134307Z  ✓ test/idempotency.test.ts > replays a deterministic 4xx from the handler
+2026-10-20T18:47:01.9135269Z  ✓ test/idempotency.test.ts > does not persist a 5xx — the same key gets a fresh attempt, not a permanent replay
+2026-10-20T18:47:01.9136425Z  ✓ test/idempotency.test.ts > never stores the raw requestHash payload — a plaintext payment code must not be recoverable from the row
+2026-10-20T18:47:03.3599305Z  ✓ test/historyPaging.test.ts > paginates by cursor; filters by text, amount, role and date range
+2026-10-20T18:47:03.6828200Z  ✓ test/merchantNotificationPersistence.test.ts > recovers persisted bytes after a worker restart and enforces a budget across workers
+2026-10-20T18:47:05.1064729Z  ✓ test/lifecycle.test.ts > payer rejects → REJECTED; receiver cannot reject
+2026-10-20T18:47:05.1675839Z  ✓ test/lifecycle.test.ts > receiver cancels before intent, but NOT after intent
+2026-10-20T18:47:05.2500351Z  ✓ test/lifecycle.test.ts > intent → register hash → SUBMITTED; duplicate hash 409; hash on other charge 409
+2026-10-20T18:47:05.2754024Z  ✓ test/lifecycle.test.ts > cannot register hash without intent
+2026-10-20T18:47:06.7279600Z  ✓ test/profile.test.ts > GET /v1/me returns the saved profile
+2026-10-20T18:47:06.7280939Z  ✓ test/profile.test.ts > GET /v1/me requires auth
+2026-10-20T18:47:06.7569466Z  ✓ test/profile.test.ts > login issues a refresh token; refresh rotates it and returns a fresh JWT
+2026-10-20T18:47:06.7570422Z  ✓ test/profile.test.ts > POST /v1/auth/refresh rejects an unknown refresh token
+2026-10-20T18:47:08.1907781Z  ✓ test/sse.test.ts > ticket is required, participant-only and single-use
+2026-10-20T18:47:08.1909465Z  ✓ test/sse.test.ts > an unredeemed ticket does not accumulate: issuing sweeps the expired ones
+2026-10-20T18:47:08.1910872Z  ✓ test/sse.test.ts > a ticket is single-use and bound to its own session
+2026-10-20T18:47:08.6832853Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > accepts an EIP-191 personal-sign proof of the exact UTF-8 message
+2026-10-20T18:47:08.6834926Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > rejects another wallet and any change to the challenge
+2026-10-20T18:47:08.6836186Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > does not accept an unprefixed hash signature as a personal-sign proof
+2026-10-20T18:47:08.6837240Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for malformed signature 
+2026-10-20T18:47:08.6838195Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for malformed signature 0x
+2026-10-20T18:47:08.6840175Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for malformed signature 0x1234
+2026-10-20T18:47:08.6842450Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for malformed signature 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+2026-10-20T18:47:08.6844821Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for malformed signature 0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+2026-10-20T18:47:08.6846253Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for malformed signature not-a-signature
+2026-10-20T18:47:08.6847210Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for invalid address 
+2026-10-20T18:47:08.6848141Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for invalid address 0x1234
+2026-10-20T18:47:08.6849666Z  ✓ test/loyaltyEvm.test.ts > verifyLoyaltyEvmSignature > fails closed for invalid address 0xzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+2026-10-20T18:47:09.3295614Z  ✓ test/taskPhotoStorage.test.ts > stores only reencoded private images and thumbnails, dropping EXIF metadata
+2026-10-20T18:47:09.3297363Z  ✓ test/taskPhotoStorage.test.ts > rejects invalid and oversized uploads before publishing any file
+2026-10-20T18:47:09.3298975Z  ✓ test/taskPhotoStorage.test.ts > cleans original and thumbnail orphan pairs without interrupting the sweep
+2026-10-20T18:47:09.5926490Z  ✓ test/hostVerifier.test.ts > nimiqHostVerifier > accepts a correct signature and returns the wallet address as subject and payoutAddress
+2026-10-20T18:47:09.5928197Z  ✓ test/hostVerifier.test.ts > nimiqHostVerifier > rejects a bad signature
+2026-10-20T18:47:09.5929892Z  ✓ test/hostVerifier.test.ts > nimiqHostVerifier > challenge names the origin, the nonce, and that signing moves no funds
+2026-10-20T18:47:10.9846858Z  ✓ test/rates.test.ts > coingecko provider caches and degrades to stale value on failure
+2026-10-20T18:47:10.9848037Z  ✓ test/rates.test.ts > GET /v1/rate returns the provider value (and null without one)
+2026-10-20T18:47:11.0059680Z  ✓ test/rates.test.ts > a quote reports the moment the rate was fetched, not the moment it was used
+2026-10-20T18:47:12.4622401Z  ✓ test/menu-information.test.ts > keeps information private until publication and preserves it in version history
+2026-10-20T18:47:13.8391376Z  ✓ test/createSession.test.ts > creates a 120s session, code never stored in plaintext
+2026-10-20T18:47:13.8526349Z  ✓ test/createSession.test.ts > same idempotency key replays same code; new key expires old session
+2026-10-20T18:47:13.8527148Z  ✓ test/createSession.test.ts > requires idempotency key
+2026-10-20T18:47:14.1211152Z  ✓ test/nimiqVerifier.test.ts > nimiqVerifier > accepts a Keyguard-style prefixed+hashed signature (Nimiq Pay)
+2026-10-20T18:47:14.1212769Z  ✓ test/nimiqVerifier.test.ts > nimiqVerifier > still accepts a signature over raw utf-8 bytes
+2026-10-20T18:47:14.1213996Z  ✓ test/nimiqVerifier.test.ts > nimiqVerifier > rejects a signature made over a different message
+2026-10-20T18:47:14.3252478Z  ✓ test/merchantFx.test.ts > merchant quotes > rounds up only the final atomic unit using exact decimal arithmetic
+2026-10-20T18:47:14.3254209Z  ✓ test/merchantFx.test.ts > uses a live asset-specific EUR rate and rejects stale or failed feeds
+2026-10-20T18:47:14.3255758Z  ✓ test/merchantFx.test.ts > uses a live asset-specific PLN rate and rejects stale or failed feeds
+2026-10-20T18:47:14.3257268Z  ✓ test/merchantFx.test.ts > uses a live asset-specific USD rate and rejects stale or failed feeds
+2026-10-20T18:47:14.5291976Z  ✓ test/pricing.test.ts > converts minor fiat units to luna and rounds up, so the vendor is never short
+2026-10-20T18:47:14.5300121Z  ✓ test/pricing.test.ts > the price charged converts back to the price entered, to the cent
+2026-10-20T18:47:14.5300980Z  ✓ test/pricing.test.ts > rejects a non-positive amount and a worthless rate
+2026-10-20T18:47:14.5301875Z  ✓ test/pricing.test.ts > never returns zero for a tiny amount
+2026-10-20T18:47:15.3007084Z  ✓ test/schema.test.ts > enforces one AVAILABLE code per payer
+2026-10-20T18:47:15.3007896Z  ✓ test/schema.test.ts > allows only one open shift per user
+2026-10-20T18:47:16.0679083Z  ✓ test/events.test.ts > persists audit row and notifies subscribers
+2026-10-20T18:47:17.2240818Z  ✓ test/cors.test.ts > allows the configured browser origin to preflight menu draft PUT operations
+2026-10-20T18:47:17.4556968Z  ✓ test/codeService.test.ts > generates exactly 6 digits, uniform-ish
+2026-10-20T18:47:17.4559239Z  ✓ test/codeService.test.ts > hash is deterministic, pepper-dependent, never the code
+2026-10-20T18:47:17.4657651Z  Test Files  79 passed (79)
+2026-10-20T18:47:17.4659322Z       Tests  401 passed (401)
+2026-10-20T18:47:17.4664074Z    Duration  171.76s (transform 1.50s, setup 0ms, collect 72.69s, tests 83.57s, environment 18ms, prepare 5.41s)
+2026-10-20T18:47:19.4258321Z  ✓ test/economics.test.tsx > shows unknown margin, historical range and explanation without inventing a zero cost
+2026-10-20T18:47:19.4613569Z  ✓ test/economics.test.tsx > displays the manual API acceptance example before and after a full refund
+2026-10-20T18:47:19.4615851Z  ✓ test/economics.test.tsx > discards responses from a previous owner or venue
+2026-10-20T18:47:19.4885044Z  ✓ test/economics.test.tsx > keeps the last successful report offline but clears it when authentication is revoked
+2026-10-20T18:47:19.5675391Z  ✓ test/finance.test.tsx > shows the immutable report range, separate current liabilities and signed flows, then retains it on a failed refresh
+2026-10-20T18:47:19.5700256Z  ✓ test/finance.test.tsx > discards a late response after the venue and owner scope change
+2026-10-20T18:47:20.5843586Z  ✓ test/finance.test.tsx > exports the displayed snapshot and leaves no active download URL 1027ms
+2026-10-20T18:47:20.6040240Z  Test Files  2 passed (2)
+2026-10-20T18:47:20.6050008Z       Tests  7 passed (7)
+2026-10-20T18:47:20.6052964Z    Duration  2.33s (transform 445ms, setup 0ms, collect 982ms, tests 1.31s, environment 614ms, prepare 200ms)

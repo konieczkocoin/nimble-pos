@@ -145,3 +145,19 @@ export function foodOperationalDate(now: Date, timeZone: string, boundaryHour: n
  const date=`${part('year')}-${part('month')}-${part('day')}`;
  return Number(part('hour'))<boundaryHour ? new Date(Date.parse(date+'T12:00:00Z')-86400000).toISOString().slice(0,10) : date;
 }
+
+/** Exact signed value in fiat minor units, captured when stock physically moves. */
+export interface InventoryMovementValuation {
+    fiatCurrency: 'EUR' | 'USD' | 'PLN';
+    unit: InventoryItem['unit'];
+    method: 'WEIGHTED_AVERAGE' | 'SUPPLIED_COST' | 'REVERSAL';
+    unitCost: {numerator:string;denominator:string} | null;
+    totalCost: {numerator:string;denominator:string} | null;
+}
+export interface InventoryCostHistoryEntry {
+    movementId:string;
+    kind:InventoryMovement['kind'];
+    delta:number;
+    createdAt:string;
+    valuation:InventoryMovementValuation | null;
+}

@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-19",
+  "scope": "independent shared-terminal session cache isolation",
+  "red": "new cashier retained three old987.65 report nodes while their orders request was pending",
+  "focusedPassed": 5,
+  "web": {
+    "files": 72,
+    "passed": 310,
+    "failed": 0
+  },
+  "build": "passed including tsc; existing chunk size warning",
+  "reviews": {
+    "spec": "no blocker; cart/checkout not directly asserted",
+    "standards": "no blocker"
+  },
+  "nativeAcceptance": "not executed; task10/11 remain blocked",
+  "externalWrites": "none"
+}

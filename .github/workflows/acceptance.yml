@@ -1,0 +1,63 @@
+name: Recovery and mobile acceptance
+on:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [recovery, mobile]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nimble_test
+          POSTGRES_PASSWORD: disposable_ci_only
+          POSTGRES_DB: nimble_${{ matrix.suite }}_test
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U nimble_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate guarded runners and types
+        run: |
+          node --test scripts/test-full-day-preflight.test.mjs
+          pnpm --filter @nimble/e2e typecheck:full-day
+      - run: pnpm --filter @nimble/e2e exec playwright install --with-deps chromium
+      - name: Run acceptance against an empty native database
+        env:
+          FULL_DAY_TEST_DATABASE_URL: postgres://nimble_test:disposable_ci_only@localhost:${{ job.services.postgres.ports[5432] }}/nimble_${{ matrix.suite }}_test
+          FULL_DAY_ALLOW_TEST_MIGRATIONS: 'yes'
+          PLAYWRIGHT_JSON_OUTPUT_FILE: ${{ github.workspace }}/acceptance-results.json
+        run: corepack pnpm --filter @nimble/e2e test:acceptance ${{ matrix.suite }} --reporter=line,json 2>&1 | tee acceptance.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-${{ matrix.suite }}-${{ github.sha }}
+          path: |
+            acceptance.log
+            acceptance-results.json
+            e2e/test-results/**/error-context.md
+            e2e/test-results/**/*.png
+            e2e/test-results/**/*.txt
+          retention-days: 14

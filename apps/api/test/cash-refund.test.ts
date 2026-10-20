@@ -1,0 +1,92 @@
+import {afterAll,expect,it} from 'vitest';
+import * as schema from '../src/db/schema';
+import {eq} from 'drizzle-orm';
+import {freshDb} from './helpers/db';
+import {authedApp,makeUser} from './helpers/actors';
+const {db,close}=await freshDb(),{app,tokenFor}=authedApp(db),key=()=>crypto.randomUUID();
+afterAll(async()=>{await app.close();await close()});
+async function setup(){
+ const owner={authorization:`Bearer ${await tokenFor(await makeUser(db,'NQ-cash-'+key()))}`};
+ const venue=(await app.inject({method:'POST',url:'/v1/merchant/venues',headers:owner,payload:{name:'Cash cafe',fiatCurrency:'EUR',nimAddress:'NQ-cash-merchant'}})).json(),base='/v1/merchant/venues/'+venue.id;
+ const call=(method:any,path:string,payload?:any)=>app.inject({method,url:base+path,headers:owner,payload});
+ const stock=(await call('POST','/inventory',{name:'Cups',unit:'PORTION',openingQuantity:2,tracked:true,threshold:0,reason:'Opening stock',idempotencyKey:key()})).json();
+ const product=(await call('POST','/catalog',{name:'Coffee',category:'Drinks',variants:[{id:key(),name:'Cup',priceMinor:1250,stockBindings:[{itemId:stock.id,quantity:1}]}],extras:[]})).json();
+ const employee=(await call('POST','/employees',{name:'Cashier',pin:'5678'})).json(),terminal=(await call('POST','/terminal')).json();
+ const cashier={authorization:`Bearer ${(await app.inject({method:'POST',url:'/v1/merchant/terminal/login',headers:{'x-terminal-token':terminal.terminalToken},payload:{employeeId:employee.id,pin:'5678'}})).json().token}`};
+ const shift=(await app.inject({method:'POST',url:'/v1/merchant/shifts',headers:cashier})).json();
+ const order=(await app.inject({method:'POST',url:'/v1/merchant/orders',headers:{...cashier,'idempotency-key':key()},payload:{lines:[{productId:product.id,variantId:product.variants[0].id,extraIds:[],quantity:1}]}})).json();
+ const pay=(body:any,k=key())=>app.inject({method:'POST',url:'/v1/merchant/orders/'+order.id+'/cash/confirm',headers:{...cashier,'idempotency-key':k},payload:body});
+ return {owner,venue,base,call,stock,product,cashier,shift,order,pay};
+}
+it('records one full physical refund, blocks pickup and does not return stock',async()=>{
+ const f=await setup();const paid=await f.pay({revision:1,tenderedMinor:2000});expect(paid.statusCode).toBe(200);
+ const base='/v1/merchant/orders/'+f.order.id+'/cash/refund',requestKey=key(),request={reason:'Customer returned the order'};
+ const ask=()=>app.inject({method:'POST',url:base+'/request',headers:{...f.cashier,'idempotency-key':requestKey},payload:request});
+ const asked=await ask();expect(asked.statusCode).toBe(200);const r=asked.json();expect(r).toMatchObject({status:'REQUESTED',amountMinor:1250,currency:'EUR',confirmedAt:null,payoutShiftId:null});expect((await ask()).json().id).toBe(r.id);
+ const pickup=await app.inject({method:'POST',url:'/v1/merchant/orders/'+f.order.id+'/status',headers:f.cashier,payload:{revision:2,status:'READY'}});expect(pickup.statusCode).toBe(409);
+ const confirm={refundId:r.id,cashHandedBack:true},confirmKey=key();
+ expect((await app.inject({method:'POST',url:base+'/confirm',headers:{...f.cashier,'idempotency-key':key()},payload:confirm})).statusCode).toBe(403);
+ const confirmed=await app.inject({method:'POST',url:base+'/confirm',headers:{...f.owner,'idempotency-key':confirmKey},payload:confirm});expect(confirmed.statusCode).toBe(200);expect(confirmed.json()).toMatchObject({id:r.id,status:'CONFIRMED',amountMinor:1250,payoutShiftId:null});expect(confirmed.json().confirmedAt).toBeTruthy();
+ expect((await app.inject({method:'POST',url:base+'/confirm',headers:{...f.owner,'idempotency-key':confirmKey},payload:confirm})).json()).toEqual(confirmed.json());
+ expect((await f.call('GET','/inventory')).json().items.find((s:any)=>s.id===f.stock.id).quantity).toBe(1);
+ const o=(await app.inject({url:'/v1/merchant/checkout/'+f.order.checkoutToken})).json();expect(o.status).toBe('REFUNDED');expect(o.cashRefund).toMatchObject({status:'CONFIRMED',amountMinor:1250});expect(o.cashRefund).not.toHaveProperty('reason');
+});
+it('counts a request only as a liability and counts a confirmed payout once in cash, fiat and product reports',async()=>{
+ const f=await setup();expect((await f.pay({revision:1,tenderedMinor:2000})).statusCode).toBe(200);
+ const base='/v1/merchant/orders/'+f.order.id+'/cash/refund';
+ const r=(await app.inject({method:'POST',url:base+'/request',headers:{...f.cashier,'idempotency-key':key()},payload:{reason:'Full refund requested'}})).json();
+ const range='?'+new URLSearchParams({from:new Date(Date.now()-86400000).toISOString(),until:new Date(Date.now()+86400000).toISOString()});
+ const report=async()=>(await f.call('GET','/finance'+range)).json();
+ const pending=await report();expect(pending.fiat[0]).toMatchObject({salesMinor:'1250',refundedSalesMinor:'0',netSalesMinor:'1250'});expect(pending.cash[0]).toMatchObject({receivedMinor:'1250',confirmedRefundsMinor:'0',netMinor:'1250',refundLiabilityMinor:'1250'});expect(pending.entries.filter((e:any)=>e.kind==='CASH_REFUND_LIABILITY')).toHaveLength(1);
+ const payload={refundId:r.id,cashHandedBack:true};const paid=()=>app.inject({method:'POST',url:base+'/confirm',headers:{...f.owner,'idempotency-key':key()},payload});expect((await paid()).statusCode).toBe(200);expect((await paid()).statusCode).toBe(200);
+ const final=await report();expect(final.cash).toEqual([{currency:'EUR',receivedMinor:'1250',confirmedRefundsMinor:'1250',netMinor:'0',refundLiabilityMinor:'0'}]);expect(final.fiat[0]).toMatchObject({salesMinor:'1250',refundedSalesMinor:'1250',netSalesMinor:'0'});expect(final.assets).toEqual([]);expect(final.ownerCashPayouts).toEqual([{currency:'EUR',amountMinor:'1250'}]);expect(final.entries.filter((e:any)=>e.kind==='CASH_REFUND_CONFIRMED')).toHaveLength(1);
+ const economics=(await f.call('GET','/economics'+range)).json();expect(economics.products).toMatchObject([{quantity:1,revenue:{numerator:'0',denominator:'1'}}]);
+ const overview=(await f.call('GET','/report')).json();expect(overview.totals).toMatchObject({grossMinor:1250,refundedMinor:1250,netMinor:0});
+ const date=new Date().toISOString().slice(0,10),day=(await f.call('GET','/day-closes/preview?'+new URLSearchParams({date,timeZone:'UTC',boundaryHour:'0'}))).json();expect(day.snapshot.cash[0]).toMatchObject({receivedMinor:'1250',confirmedRefundsMinor:'1250',netMinor:'0'});expect(day.snapshot.ownerCashPayouts).toEqual([{currency:'EUR',amountMinor:'1250'}]);
+});
+it('rejects partial/false confirmations and foreign actors, keeps the original reason and detects changed retry payloads',async()=>{
+ const f=await setup(),other=await setup();await f.pay({revision:1,tenderedMinor:2000});
+ const base='/v1/merchant/orders/'+f.order.id+'/cash/refund',k=key();
+ const post=(path:string,payload:any,headers=f.owner,id=k)=>app.inject({method:'POST',url:base+path,headers:{...headers,'idempotency-key':id},payload});
+ expect((await post('/request',{reason:'Original reason',amountMinor:500})).statusCode).toBe(400);
+ expect((await post('/request',{reason:'Original reason'},other.owner)).statusCode).toBe(404);
+ const r=(await post('/request',{reason:'Original reason'})).json();
+ expect((await post('/request',{reason:'Changed reason'})).json().error.code).toBe('IDEMPOTENCY_CONFLICT');
+ expect((await post('/request',{reason:'Another request'},f.owner,key())).json()).toMatchObject({id:r.id,reason:'Original reason'});
+ expect((await post('/confirm',{refundId:r.id,cashHandedBack:false})).statusCode).toBe(400);
+ expect((await post('/confirm',{refundId:r.id,cashHandedBack:true,amountMinor:500})).statusCode).toBe(400);
+ expect((await post('/confirm',{refundId:r.id,cashHandedBack:true},other.owner,key())).statusCode).toBe(404);
+ expect((await app.inject({url:base,headers:other.cashier})).statusCode).toBe(404);
+ const pending=(await app.inject({url:base,headers:f.owner})).json();expect(pending.status).toBe('REQUESTED');
+});
+it('serializes concurrent confirmations and rechecks revoked access before retry',async()=>{
+ const f=await setup();await f.pay({revision:1,tenderedMinor:2000});const base='/v1/merchant/orders/'+f.order.id+'/cash/refund';
+ const r=(await app.inject({method:'POST',url:base+'/request',headers:{...f.cashier,'idempotency-key':key()},payload:{reason:'One full refund'}})).json();
+ const results=await Promise.all([1,2].map(()=>app.inject({method:'POST',url:base+'/confirm',headers:{...f.owner,'idempotency-key':key()},payload:{refundId:r.id,cashHandedBack:true}})));
+ expect(results.map(r=>r.statusCode)).toEqual([200,200]);expect(results[0].json()).toEqual(results[1].json());
+ await f.call('POST','/terminal/revoke');
+ expect((await app.inject({method:'POST',url:base+'/request',headers:{...f.cashier,'idempotency-key':key()},payload:{reason:'One full refund'}})).statusCode).toBe(401);
+});
+it('keeps an owner payout out of the original closed shift and records it on the actual payout day without an open shift',async()=>{
+ const f=await setup();const paid=(await f.pay({revision:1,tenderedMinor:2000})).json();
+ const saleAt=new Date('2026-10-17T12:00:00Z');
+ await db.update(schema.merchantCashReceipt).set({recordedAt:saleAt}).where(eq(schema.merchantCashReceipt.id,paid.cashReceipt.id));
+ await db.update(schema.merchantFinancialSale).set({occurredAt:saleAt}).where(eq(schema.merchantFinancialSale.orderId,f.order.id));
+ const closedShift=await app.inject({method:'POST',url:'/v1/merchant/shifts/'+f.shift.id+'/close',headers:f.cashier});expect(closedShift.statusCode).toBe(200);
+ const window={date:'2026-10-17',timeZone:'UTC',boundaryHour:0},preview=(await f.call('GET','/day-closes/preview?'+new URLSearchParams({...window,boundaryHour:'0'}))).json();
+ const closedDay=await f.call('POST','/day-closes',{...window,note:'Close original sale day',carry:[],ownerExceptionReason:'Owner tracks open pickup',expectedFingerprint:preview.fingerprint,idempotencyKey:key()});expect(closedDay.statusCode).toBe(200);
+ const base='/v1/merchant/orders/'+f.order.id+'/cash/refund';
+ expect((await app.inject({method:'POST',url:base+'/request',headers:{...f.cashier,'idempotency-key':key()},payload:{reason:'Closed shift cannot request'}})).json().error.code).toBe('SHIFT_REQUIRED');
+ const r=(await app.inject({method:'POST',url:base+'/request',headers:{...f.owner,'idempotency-key':key()},payload:{reason:'Owner handles old sale'}})).json();
+ expect((await app.inject({method:'POST',url:base+'/confirm',headers:{...f.owner,'idempotency-key':key()},payload:{refundId:r.id,cashHandedBack:true}})).statusCode).toBe(200);
+ const date=new Date().toISOString().slice(0,10),day=(await f.call('GET','/day-closes/preview?'+new URLSearchParams({date,timeZone:'UTC',boundaryHour:'0'}))).json();
+ expect(day.snapshot.cash).toEqual([{currency:'EUR',receivedMinor:'0',confirmedRefundsMinor:'1250',netMinor:'-1250',refundLiabilityMinor:'0'}]);expect(day.snapshot.ownerCashPayouts).toEqual([{currency:'EUR',amountMinor:'1250'}]);
+ expect((await app.inject({url:'/v1/merchant/shifts/'+f.shift.id+'/report',headers:f.cashier})).json()).toEqual(closedShift.json());expect((await f.call('GET','/day-closes')).json().items[0]).toEqual(closedDay.json());
+});
+it('serializes a request against pickup and preserves the winning order state',async()=>{
+ const f=await setup();await f.pay({revision:1,tenderedMinor:1250});
+ const ready=await app.inject({method:'POST',url:'/v1/merchant/orders/'+f.order.id+'/status',headers:f.cashier,payload:{revision:2,status:'READY'}});expect(ready.statusCode).toBe(200);
+ const results=await Promise.all([app.inject({method:'POST',url:'/v1/merchant/orders/'+f.order.id+'/cash/refund/request',headers:{...f.cashier,'idempotency-key':key()},payload:{reason:'Customer refund at pickup'}}),app.inject({method:'POST',url:'/v1/merchant/orders/'+f.order.id+'/status',headers:f.cashier,payload:{revision:2,status:'COLLECTED'}})]);
+ expect(results[0].statusCode).toBe(200);expect([200,409]).toContain(results[1].statusCode);
+ expect((await app.inject({url:'/v1/merchant/checkout/'+f.order.checkoutToken})).json().status).toBe('REFUND_PENDING');
+});

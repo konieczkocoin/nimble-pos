@@ -61,7 +61,7 @@ Dokładna kwota w wybranej kryptowalucie, wyliczona dla konkretnego podsumowania
 _Avoid_: Cena produktu, orientacyjne przeliczenie
 
 **Zwrot (Refund)**:
-Osobny przelew od właściciela do klienta, oddający pełną otrzymaną kwotę w tym samym aktywie.
+Potwierdzone oddanie klientowi kwoty zapłaty: fizyczna wypłata gotówki w walucie sprzedaży albo osobny przelew właściciela w pierwotnym aktywie. Wniosek o zwrot nie oznacza jego wykonania.
 _Avoid_: Cofnięcie transakcji, anulowanie opłaconego zamówienia
 
 **Sygnał odbioru (Pickup signal)**:
@@ -79,3 +79,12 @@ _Avoid_: Edycja historii, zmiana ceny
 **Odwrócenie ruchu (Movement reversal)**:
 Nowy ruch przeciwny do błędnego wpisu, zachowujący oryginał oraz powód korekty.
 _Avoid_: Usunięcie ruchu, zwrot pieniędzy
+
+
+**Historyczna wycena ruchu (Movement valuation)**:
+Wartość zmiany zapasu ustalona w chwili jej zapisania, w walucie lokalu i jednostce zasobu. Późniejsze ceny jej nie zmieniają; brak znanej ceny oznacza brak wyceny, nie koszt zerowy.
+_Avoid_: Zysk netto, aktualna cena zakupu
+
+**Marża składnikowa (Ingredient margin)**:
+Przychód ze sprzedaży pomniejszony o koszt zużytych składników. Nie obejmuje m.in. wynagrodzeń, czynszu i podatków.
+_Avoid_: Zysk netto, utarg

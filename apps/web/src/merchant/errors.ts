@@ -3,6 +3,13 @@ import { ApiError } from '../api/client';
 export function merchantError(error: unknown): string {
   const code = error instanceof ApiError ? error.code : error instanceof Error ? error.message : '';
   const messages: Record<string, string> = {
+    DRAFT_RESOURCE_UNAVAILABLE: 'A planned ingredient or finished item is disabled or no longer tracked. Refresh stock before executing this draft.',
+    DRAFT_REVISION_CONFLICT: 'The draft changed. Refresh the list and compare it with your form before editing again.',
+    DRAFT_NOT_EDITABLE: 'This draft has been cancelled or completed and cannot be edited.',
+    OUTPUT_NOT_TRACKED: 'Enable stock tracking for the finished resource before requesting a production proposal.',
+    PRODUCTION_HISTORY_TOO_LARGE: 'Production history exceeds the planning limit. No partial proposal was generated.',
+    INVALID_HISTORY_RANGE: 'Choose 3–90 complete UTC days ending no later than today.',
+    HISTORY_REPORT_TOO_LARGE: 'Choose a shorter history window. This report would exceed its safety limit.',
     RECHECK_RATE_LIMITED: 'Wait at least 30 seconds before requesting another verification. The existing payment continues to be monitored.',
     PAYMENT_ALREADY_RESOLVED: 'This payment or fulfillment decision has changed. Review the refreshed exception before continuing.',
     PAYMENT_MISMATCH: 'The submitted transfer does not match this quote. Keep the customer informed and review the payment details.',
@@ -109,10 +116,10 @@ export function merchantError(error: unknown): string {
   if (messages[code])
     return t(messages[code]);
   if (error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name))
-    return 'The request took too long. Please check your connection and retry.';
+    return t('The request took too long. Please check your connection and retry.');
   if (error instanceof ApiError)
-    return 'We could not complete this action. Refresh the page and try again.';
-  return error instanceof Error && !/^[A-Z_]+$/.test(error.message) && !/rpc|eth_|eip155|nimiq:|provider|fetch|json/i.test(error.message) ? error.message : 'Please try again in a moment.';
+    return t('We could not complete this action. Refresh the page and try again.');
+  return error instanceof Error && !/^[A-Z_]+$/.test(error.message) && !/rpc|eth_|eip155|nimiq:|provider|fetch|json/i.test(error.message) ? error.message : t('Please try again in a moment.');
 }
 export function networkName(network: string): string {
   return ({ 'nimiq:24': 'Nimiq mainnet', 'nimiq:5': 'Nimiq testnet', 'eip155:137': 'Polygon', demo: 'Simulated' } as Record<string, string>)[network] ?? 'Wallet network';

@@ -3,7 +3,7 @@ name: Native PostgreSQL acceptance
 on:
   pull_request:
   push:
-    branches: [main, feat/merchant-management, fork/merchant-prelive]
+    branches: [main, feat/nimble-pos, feat/merchant-management, fork/merchant-prelive, 'recovery/**']
   workflow_dispatch:
 
 permissions:
@@ -39,20 +39,51 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - name: Record native acceptance metadata
+        run: |
+          {
+            printf 'Checkout SHA: %s\n' "$(git rev-parse HEAD)"
+            printf 'Node: '
+            node --version
+            printf 'pnpm: '
+            pnpm --version
+          } 2>&1 | tee native-postgres.log
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Verify destructive-runner guards
         run: node --test scripts/test-native-postgres.test.mjs
+      - name: Verify backup failure and retention safety
+        run: node --test scripts/test-backup.test.mjs
+      - name: Verify native stock contention regression
+        env:
+          NATIVE_POSTGRES_TEST_URL: postgres://nimble_test:disposable_ci_only@localhost:${{ job.services.postgres.ports[5432] }}/nimble_native_test
+          NATIVE_POSTGRES_ALLOW_RESET: 'yes'
+        run: node scripts/test-native-postgres.mjs test/stock-reward-reservations.test.ts 2>&1 | tee native-stock-locking.log
       - name: Run complete API suite on native PostgreSQL
         env:
           NATIVE_POSTGRES_TEST_URL: postgres://nimble_test:disposable_ci_only@localhost:${{ job.services.postgres.ports[5432] }}/nimble_native_test
           NATIVE_POSTGRES_ALLOW_RESET: 'yes'
-        run: node scripts/test-native-postgres.mjs 2>&1 | tee native-postgres.log
+        run: node scripts/test-native-postgres.mjs 2>&1 | tee -a native-postgres.log
+      - name: Verify economics and finance screens
+        run: pnpm --filter @nimble/web exec vitest run test/economics.test.tsx test/finance.test.tsx --reporter=verbose 2>&1 | tee economics-ui.log
       - name: Preserve native acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-postgres-${{ github.sha }}
-          path: native-postgres.log
+          path: |
+            native-postgres.log
+            native-stock-locking.log
+            economics-ui.log
           if-no-files-found: ignore
           retention-days: 14
+
+  full-day:
+    if: github.event_name == 'pull_request'
+    needs: native-postgres
+    uses: ./.github/workflows/full-day.yml
+
+  acceptance:
+    if: github.event_name == 'pull_request'
+    needs: full-day
+    uses: ./.github/workflows/acceptance.yml

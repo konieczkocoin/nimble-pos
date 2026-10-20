@@ -1,0 +1,304 @@
+[
+  {
+    "id": 1,
+    "title": "Natywna baza: dowód działania obecnego kodu",
+    "blocked_by": [],
+    "status": "blocked",
+    "risk": "środowisko",
+    "file": "issues/01.md"
+  },
+  {
+    "id": 2,
+    "title": "Odbiór kosztów i marży na natywnej bazie",
+    "blocked_by": [
+      1
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/02.md"
+  },
+  {
+    "id": 3,
+    "title": "Zapis i ponowne otwarcie szkicu produkcji",
+    "blocked_by": [
+      1
+    ],
+    "status": "review",
+    "risk": "średnie",
+    "file": "issues/03.md"
+  },
+  {
+    "id": 4,
+    "title": "Edycja i anulowanie szkicu produkcji",
+    "blocked_by": [
+      3
+    ],
+    "status": "review",
+    "risk": "średnie",
+    "file": "issues/04.md"
+  },
+  {
+    "id": 5,
+    "title": "Realizacja szkicu produkcji dokładnie raz",
+    "blocked_by": [
+      4
+    ],
+    "status": "review",
+    "risk": "wysokie",
+    "file": "issues/05.md"
+  },
+  {
+    "id": 6,
+    "title": "Projekt kontraktu sprzedaży gotówkowej",
+    "blocked_by": [
+      1
+    ],
+    "status": "review",
+    "risk": "projekt",
+    "file": "issues/06.md"
+  },
+  {
+    "id": 7,
+    "title": "Gotówka: kompletna sprzedaż przy kasie",
+    "blocked_by": [
+      6
+    ],
+    "status": "review",
+    "risk": "wysokie",
+    "file": "issues/07.md"
+  },
+  {
+    "id": 8,
+    "title": "Gotówka w raporcie i zamknięciu dnia",
+    "blocked_by": [
+      7
+    ],
+    "status": "review",
+    "risk": "wysokie",
+    "file": "issues/08.md"
+  },
+  {
+    "id": 9,
+    "title": "Pełny zwrot sprzedaży gotówkowej",
+    "blocked_by": [
+      8
+    ],
+    "status": "review",
+    "risk": "wysokie",
+    "file": "issues/09.md"
+  },
+  {
+    "id": 10,
+    "title": "Pełny dzień lokalu w przeglądarce",
+    "blocked_by": [
+      2,
+      5,
+      9
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/10.md"
+  },
+  {
+    "id": 11,
+    "title": "Awarie i odebranie praw w aktywnej sesji",
+    "blocked_by": [
+      10
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/11.md"
+  },
+  {
+    "id": 12,
+    "title": "Odbiór mobilny i kompletność komunikatów",
+    "blocked_by": [
+      10
+    ],
+    "status": "blocked",
+    "risk": "średnie",
+    "file": "issues/12.md"
+  },
+  {
+    "id": 13,
+    "title": "Pomiar i poprawa wydajności telefonu",
+    "blocked_by": [
+      12
+    ],
+    "status": "blocked",
+    "risk": "średnie",
+    "file": "issues/13.md"
+  },
+  {
+    "id": 14,
+    "title": "Odtworzenie bazy i zdjęć do pustej instancji",
+    "blocked_by": [
+      11
+    ],
+    "status": "blocked",
+    "risk": "środowisko",
+    "file": "issues/14.md"
+  },
+  {
+    "id": 15,
+    "title": "Migracja wcześniejszych danych i powrót aplikacji",
+    "blocked_by": [
+      14
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/15.md"
+  },
+  {
+    "id": 16,
+    "title": "Kandydat HTTPS i strona statusu",
+    "blocked_by": [
+      11,
+      13,
+      15
+    ],
+    "status": "blocked",
+    "risk": "środowisko",
+    "file": "issues/16.md"
+  },
+  {
+    "id": 17,
+    "title": "Odbiór NIM i USDT w Nimiq Pay",
+    "blocked_by": [
+      16
+    ],
+    "status": "blocked",
+    "risk": "środowisko",
+    "file": "issues/17.md"
+  },
+  {
+    "id": 18,
+    "title": "Klucze Merchant API: utworzenie i odwołanie",
+    "blocked_by": [
+      16
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/18.md"
+  },
+  {
+    "id": 19,
+    "title": "Publiczne wystawienie i odczyt rachunku",
+    "blocked_by": [
+      18
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/19.md"
+  },
+  {
+    "id": 20,
+    "title": "Przykładowa integracja sklepu i sandbox",
+    "blocked_by": [
+      19
+    ],
+    "status": "blocked",
+    "risk": "średnie",
+    "file": "issues/20.md"
+  },
+  {
+    "id": 21,
+    "title": "Webhook: konfiguracja i dostarczenie zdarzenia",
+    "blocked_by": [
+      19
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/21.md"
+  },
+  {
+    "id": 22,
+    "title": "Webhook: retry i ręczne ponowienie",
+    "blocked_by": [
+      21
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/22.md"
+  },
+  {
+    "id": 23,
+    "title": "Dobrowolny napiwek do sprzedaży",
+    "blocked_by": [
+      17
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/23.md"
+  },
+  {
+    "id": 24,
+    "title": "Deklarowany profil firmy",
+    "blocked_by": [
+      16
+    ],
+    "status": "blocked",
+    "risk": "średnie",
+    "file": "issues/24.md"
+  },
+  {
+    "id": 25,
+    "title": "Procedura weryfikacji firmy — decyzja przed kodem",
+    "blocked_by": [
+      24
+    ],
+    "status": "blocked",
+    "risk": "decyzja",
+    "file": "issues/25.md"
+  },
+  {
+    "id": 26,
+    "title": "Kontrakt podziału rachunku",
+    "blocked_by": [
+      17
+    ],
+    "status": "blocked",
+    "risk": "projekt",
+    "file": "issues/26.md"
+  },
+  {
+    "id": 27,
+    "title": "Podział rachunku: płatności udziałów",
+    "blocked_by": [
+      26
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/27.md"
+  },
+  {
+    "id": 28,
+    "title": "Podział rachunku: awarie i zwroty",
+    "blocked_by": [
+      27
+    ],
+    "status": "blocked",
+    "risk": "wysokie",
+    "file": "issues/28.md"
+  },
+  {
+    "id": 29,
+    "title": "Telefon i SMS — projekt oraz wybór dostawcy",
+    "blocked_by": [
+      17
+    ],
+    "status": "blocked",
+    "risk": "decyzja",
+    "file": "issues/29.md"
+  },
+  {
+    "id": 30,
+    "title": "Opłaty platformy — kontrakt rozliczeń",
+    "blocked_by": [
+      20
+    ],
+    "status": "blocked",
+    "risk": "decyzja",
+    "file": "issues/30.md"
+  }
+]

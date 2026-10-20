@@ -3,6 +3,7 @@ import * as s from '../src/db/schema';
 import {afterAll,expect,it} from 'vitest';
 import {freshDb} from './helpers/db';
 import {authedApp,makeUser} from './helpers/actors';
+import {env} from '../src/env';
 const {db,close}=await freshDb(); const {app,tokenFor}=authedApp(db);
 afterAll(async()=>{await app.close();await close()});
 it('owner gets explicit operations window, unknown presence and empty exception page without credentials',async()=>{
@@ -63,14 +64,60 @@ it('recheck keeps an unknown hash unverified, persists safe diagnostics, and rep
 
 });
 it('counts received atomic payments separately from accepted snapshot sales at their actual event time',async()=>{
- const {headers,base,venue}=await setup(),now=new Date(),old=new Date(now.getTime()-172800000);
- for(const [accepted,oldPayment,snapshot,amount] of [[true,false,500,'1000'],[false,false,900,'2000'],[true,true,700,'3000']] as const){
- const hash=crypto.randomUUID(),payment={asset:'NIM' as const,network:'nimiq:5',amountAtomic:amount,sender:'NQ-customer',recipient:'NQ-owner',hash,confirmedAt:(oldPayment?old:now).toISOString()};
- const [o]=await db.insert(s.merchantOrder).values({venueId:venue.id,number:accepted?(oldPayment?3:1):2,source:'REMOTE',status:accepted?'PREPARING':'REFUND_PENDING',fiatCurrency:'EUR',totalMinor:9999,lines:[],checkoutToken:crypto.randomUUID(),requestKey:crypto.randomUUID(),requestHash:'fixture',payment,paymentSnapshot:{revision:1,lines:[],totalMinor:snapshot},paymentRequiresRefund:!accepted,decision:accepted?'ACCEPTED':'REJECTED',decisionAt:oldPayment?old:now,createdAt:old}).returning();
- await db.insert(s.merchantVerifiedTransaction).values({orderId:o.id,purpose:'PAYMENT',network:payment.network,hash,receipt:payment});
- if(!accepted) await db.insert(s.merchantRefund).values({orderId:o.id,status:'CONFIRMED'});
+ const previousRemote=env.remoteOrderingEnabled,previousPayments=app.deps.merchantPayments;
+ env.remoteOrderingEnabled=true;
+ try{
+ const {headers,base,venue,worker}=await setup(),old=new Date(Date.now()-172800000);
+ const address='NQ-ops-customer-'+crypto.randomUUID(),customer={authorization:`Bearer ${await tokenFor(await makeUser(db,address))}`};
+ const remote='/v1/merchant/remote';
+ async function post(url:string,auth:Record<string,string>,payload?:Record<string,unknown>,status=200,key?:string){
+  const response=await app.inject({method:'POST',url,headers:{...auth,...(key?{'idempotency-key':key}:{})},payload});
+  expect(response.statusCode,response.body).toBe(status);return response.json();
  }
- const r=(await app.inject({url:base+'/operations',headers})).json();expect(r.acceptedSalesMinor).toBe('500');expect(r.receivedPayments).toEqual([{asset:'NIM',network:'nimiq:5',amountAtomic:'3000',count:2}]);expect(r.refundCount).toBe(1);expect(r.openOrderCount).toBe(2);
- const report=(await app.inject({url:base+'/report',headers})).json();expect(report.totals).toMatchObject({grossMinor:1200,netMinor:1200,refunded:1,refundedMinor:900,assets:{NIM:'4000',USDT:'0'}});
-
+ await post('/v1/merchant/shifts',worker,undefined,201);
+ const settings=await app.inject({method:'PATCH',url:`${remote}/venues/${venue.id}/settings`,headers,payload:{published:true,description:'Coffee',address:'Main 1',city:'Gliwice',pickupInstructions:'Counter',preparationMinutes:10}});
+ expect(settings.statusCode,settings.body).toBe(200);
+ await post(`${remote}/venues/${venue.id}/heartbeat`,worker);
+ const availability=await app.inject({method:'PATCH',url:`${remote}/venues/${venue.id}/availability`,headers:worker,payload:{accepting:true}});
+ expect(availability.statusCode,availability.body).toBe(200);
+ app.deps.merchantPayments={
+  quote:async input=>({...input,id:crypto.randomUUID(),network:'nimiq:5',amountAtomic:({500:'1000',900:'2000',700:'3000'} as Record<number,string>)[input.totalMinor],rate:'1',rateAt:new Date().toISOString(),rateSource:'test',issuedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+120000).toISOString()}),
+  verify:async({quote,hash})=>({...quote,hash,confirmedAt:new Date().toISOString()}),
+  refreshRefundQuote:async quote=>quote,
+ };
+ let rejectedId='';
+ for(const [accepted,oldPayment,price] of [[true,false,500],[false,false,900],[true,true,700]] as const){
+  const variantId=crypto.randomUUID(),product=await post(base+'/catalog',headers,{name:'Tea '+price,category:'Drinks',variants:[{id:variantId,name:'Cup',priceMinor:price}],extras:[]},201);
+  const order=await post(`${remote}/venues/${venue.id}/orders`,customer,{lines:[{productId:product.id,variantId,extraIds:[],quantity:1}]},201,crypto.randomUUID());
+  const checkout='/v1/merchant/checkout/'+order.checkoutToken;
+  const quoted=await post(checkout+'/quote',customer,{revision:1,asset:'NIM',sender:address});
+  const paid=await post(checkout+'/payment',customer,{revision:1,quoteId:quoted.quote.id,hash:crypto.randomUUID().replaceAll('-','').padEnd(64,'a')});
+  expect(paid.status).toBe('AWAITING_ACCEPTANCE');
+  const action=`${remote}/orders/${order.id}/${accepted?'accept':'reject'}`,decision=accepted?{preparationMinutes:8}:{reason:'Kitchen closed'};
+  const decided=await post(action,worker,decision);
+  expect(decided.status).toBe(accepted?'PREPARING':'REFUND_PENDING');
+  // Replay decisions through the public API; immutable sale must not be duplicated.
+  await post(action,worker,decision);
+  // Only time/current-row drift is injected. Money, acceptance, sale snapshots and
+  // the refund are created through the actual API, not fabricated DB inserts.
+  await db.update(s.merchantOrder).set({createdAt:old,totalMinor:9999,...(oldPayment?{decisionAt:old,payment:{...paid.payment,confirmedAt:old.toISOString()}}:{})}).where(eq(s.merchantOrder.id,order.id));
+  if(oldPayment){
+   await db.update(s.merchantVerifiedTransaction).set({receipt:{...paid.payment,confirmedAt:old.toISOString()}}).where(eq(s.merchantVerifiedTransaction.orderId,order.id));
+   await db.update(s.merchantFinancialSale).set({occurredAt:old}).where(eq(s.merchantFinancialSale.orderId,order.id));
+  }
+  if(!accepted)rejectedId=order.id;
+ }
+ const pending=(await app.inject({url:base+'/operations',headers})).json();
+ expect(pending.acceptedSalesMinor).toBe('500');expect(pending.refundCount).toBe(1);
+ const approved=await post(`/v1/merchant/orders/${rejectedId}/refund/approve`,headers);
+ const refund={hash:'e'.repeat(64),quoteId:approved.refund.quote.id};
+ await post(`/v1/merchant/orders/${rejectedId}/refund/payment`,headers,refund);
+ await post(`/v1/merchant/orders/${rejectedId}/refund/payment`,headers,refund);
+ const r=(await app.inject({url:base+'/operations',headers})).json();
+ expect(r.acceptedSalesMinor).toBe('500');expect(r.receivedPayments).toEqual([{asset:'NIM',network:'nimiq:5',amountAtomic:'3000',count:2}]);expect(r.refundCount).toBe(0);expect(r.openOrderCount).toBe(2);
+ const response=await app.inject({url:base+'/report',headers});expect(response.statusCode,response.body).toBe(200);
+ // Accepted sales: 500 + 700 = 1200. Rejected 900 was never a sale.
+ // Atomic transfers: 1000 + 2000 + 3000 - rejected refund 2000 = 4000.
+ expect(response.json().totals).toMatchObject({grossMinor:1200,netMinor:1200,refunded:1,refundedMinor:0,assets:{NIM:'4000',USDT:'0'}});
+ }finally{env.remoteOrderingEnabled=previousRemote;app.deps.merchantPayments=previousPayments;}
 });

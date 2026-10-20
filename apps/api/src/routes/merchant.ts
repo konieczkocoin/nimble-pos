@@ -1,3 +1,5 @@
+import {cashRefundRoutes,cashRefundView} from './cashRefunds'
+import {cashReceiptTotals,ownerCashPayoutTotals,salePaymentMethodTotals} from '@nimble/shared'
 import {financeRoutes} from './finance'
 import {depositResolutionRoutes} from './depositResolutions'
 import {submitAttempt,submitMerchantPaymentIntent} from '../services/merchantPaymentIntent'
@@ -16,7 +18,7 @@ import {readinessRoutes} from './readiness'
 import {orderReadiness,changeOrderReadiness} from '../services/orderReadiness'
 import { orderContextRoutes } from './orderContext'
 import { operationRoutes } from './operations'
-import { reserveOrderStock, pinOrderStock, releaseOrderStock, stockReservationView } from '../services/stockReservations'
+import { consumeCashOrderStock, reserveOrderStock, pinOrderStock, releaseOrderStock, stockReservationView } from '../services/stockReservations'
 import { validateMenuStock } from './menuStock'
 import { menuRoutes, bumpMenuRevision } from './menu'
 import { inventoryRoutes } from './inventory'
@@ -34,6 +36,8 @@ import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { z, ZodError } from 'zod'
 import {
+  CashSaleInput,
+  type CashReceipt,
   MerchantPermissionSchema,
   type MerchantPermission,
   MerchantVenueInput,
@@ -183,11 +187,11 @@ export async function merchantRoutes(app: FastifyInstance) {
   app.addHook('preHandler', async (req) => {
     if (req.headers.authorization) await actor(req)
   })
-  async function uncachedActor(req: FastifyRequest): Promise<Actor> {
+  async function uncachedActor(req: FastifyRequest, store:Db=db): Promise<Actor> {
     const raw = req.headers.authorization?.replace(/^Bearer /, '')
     if (!raw || !req.headers.authorization?.startsWith('Bearer '))
       return fail(401, 'UNAUTHENTICATED')
-    const [s] = await db
+    const query = store
       .select({
         session: schema.merchantCashierSession,
         terminal: schema.merchantTerminal,
@@ -217,6 +221,7 @@ export async function merchantRoutes(app: FastifyInstance) {
           eq(schema.merchantEmployee.active, true),
         ),
       )
+    const [s] = await (store===db?query:query.for('share'));
     if (s)
       return {
         kind: 'cashier',
@@ -315,13 +320,25 @@ export async function merchantRoutes(app: FastifyInstance) {
   }
   // Cost history remains internal; a checkout URL and operational token do not grant cost access.
   const publicRecipeLines=(lines:OrderRow['lines'])=>lines.map(line=>({...line,...(line.recipeSnapshots?{recipeSnapshots:line.recipeSnapshots.map(({unitCosts,...r})=>({...r,costMinor:null}))}:{})}));
+  function cashView(r:typeof schema.merchantCashReceipt.$inferSelect):CashReceipt{return {id:r.id,orderId:r.orderId,currency:r.currency,dueMinor:r.dueMinor,tenderedMinor:r.tenderedMinor,changeMinor:r.changeMinor,recordedAt:r.recordedAt.toISOString()}}
   async function view(order: OrderRow, store: Db = db): Promise<MerchantOrder> {
     const [refund] = await store
       .select()
       .from(schema.merchantRefund)
       .where(eq(schema.merchantRefund.orderId, order.id))
+    const [cashReceipt]=order.cashReceiptId?await store.select().from(schema.merchantCashReceipt).where(eq(schema.merchantCashReceipt.id,order.cashReceiptId)):[]
+    const [cashRefund]=order.cashReceiptId?await store.select().from(schema.merchantCashRefund).where(eq(schema.merchantCashRefund.orderId,order.id)):[]
     const [discount] = await store.select().from(schema.merchantDiscount).where(and(eq(schema.merchantDiscount.orderId,order.id),eq(schema.merchantDiscount.status,'APPLIED')))
+    let cashPaymentAvailable=order.source==='COUNTER'&&order.status==='AWAITING_PAYMENT'&&!order.payment&&!order.paymentSnapshot&&!order.cashReceiptId&&!order.quote&&!order.quoteHistory.length&&!order.pendingPaymentHash&&!order.payerUserId&&!order.claimSessionId&&!order.notificationAddress;
+    if(cashPaymentAvailable){
+      const [attempt]=await store.select({id:schema.merchantTransferAttempt.id}).from(schema.merchantTransferAttempt).where(and(eq(schema.merchantTransferAttempt.orderId,order.id),eq(schema.merchantTransferAttempt.purpose,'PAYMENT'))).limit(1);
+      const [pendingDiscount]=await store.select({id:schema.merchantDiscount.orderId}).from(schema.merchantDiscount).where(and(eq(schema.merchantDiscount.orderId,order.id),eq(schema.merchantDiscount.status,'PENDING'))).limit(1);
+      cashPaymentAvailable=!attempt&&!pendingDiscount;
+    }
     return {
+      ...(cashRefund?{cashRefund:((r)=>{const {reason,...summary}=cashRefundView(r);return summary})(cashRefund)}:{}),
+      cashPaymentAvailable,
+      ...(cashReceipt?{paymentMethod:'CASH' as const,cashReceipt:{id:cashReceipt.id,orderId:cashReceipt.orderId,currency:cashReceipt.currency,dueMinor:cashReceipt.dueMinor,recordedAt:cashReceipt.recordedAt.toISOString()}}:{}),
       discountMinor: discount?.amountMinor ?? 0,
       stockReservation: await stockReservationView(store, order),
       id: order.id,
@@ -345,7 +362,7 @@ export async function merchantRoutes(app: FastifyInstance) {
       pendingPaymentRevision: order.paymentSnapshot?.revision ?? order.revision,
       quote: order.quote,
       payment: order.payment,
-      paidSnapshot: order.payment && order.paymentSnapshot ? {...order.paymentSnapshot,lines:publicRecipeLines(order.paymentSnapshot.lines)} : null,
+      paidSnapshot: (order.payment || cashReceipt) && order.paymentSnapshot ? {...order.paymentSnapshot,lines:publicRecipeLines(order.paymentSnapshot.lines)} : null,
       refund: refund
         ? {
             id: refund.id,
@@ -428,15 +445,15 @@ export async function merchantRoutes(app: FastifyInstance) {
       .from(schema.merchantOrder)
       .where(
         shiftId
-          ? eq(schema.merchantOrder.shiftId, shiftId)
+          ? and(eq(schema.merchantOrder.venueId,venueId),eq(schema.merchantOrder.shiftId, shiftId))
           : eq(schema.merchantOrder.venueId, venueId),
       )
       .orderBy(schema.merchantOrder.number)
     const orders = await Promise.all(rows.map((o) => view(o, store)))
-    const paid = orders.filter((o) => o.payment)
+    const paid = orders.filter((o) => o.payment || o.cashReceipt)
     const saleRows=await store.select().from(schema.merchantFinancialSale).where(and(eq(schema.merchantFinancialSale.venueId,venueId),sql`${schema.merchantFinancialSale.data}->>'status'='RECORDED'`,shiftId?sql`${schema.merchantFinancialSale.data}->>'shiftId'=${shiftId}`:undefined))
     const saleByOrder=new Map(saleRows.map(r=>[r.orderId,r.data])),acceptedIds = new Set(saleByOrder.keys())
-    const refunded = paid.filter((o) => o.refund?.status === 'CONFIRMED')
+    const refunded = paid.filter((o) => o.refund?.status === 'CONFIRMED'||!shiftId&&o.cashRefund?.status==='CONFIRMED')
     const sales = paid.filter(
       (o) => acceptedIds.has(o.id),
     )
@@ -444,13 +461,16 @@ export async function merchantRoutes(app: FastifyInstance) {
     if(grossExact>BigInt(Number.MAX_SAFE_INTEGER)||refundedExact>BigInt(Number.MAX_SAFE_INTEGER))return fail(413,'USE_EXACT_FINANCIAL_REPORT')
     const grossMinor=Number(grossExact),refundedMinor=Number(refundedExact)
     const assets = { NIM: 0n, USDT: 0n }
-    for (const o of paid)
+    for (const o of paid.filter(o=>o.payment))
       assets[o.payment!.asset] += BigInt(o.payment!.amountAtomic)
-    for (const o of refunded)
+    for (const o of refunded.filter(o=>o.payment))
       assets[o.payment!.asset] -= BigInt(o.payment!.amountAtomic)
     return {
       orders,
       totals: {
+        ownerCashPayouts:ownerCashPayoutTotals(shiftId?[]:orders.flatMap(o=>o.cashRefund?[o.cashRefund]:[])),
+        cash:cashReceiptTotals(orders.flatMap(o=>o.cashReceipt?[o.cashReceipt]:[]),shiftId?[]:orders.flatMap(o=>o.cashRefund?[o.cashRefund]:[])),
+        salesByPaymentMethod:salePaymentMethodTotals(saleRows.map(r=>r.data)),
         count: orders.length,
         paid: paid.length,
         refunded: refunded.length,
@@ -539,7 +559,8 @@ export async function merchantRoutes(app: FastifyInstance) {
       .limit(1)
     const [catalogProduct] = await db.select({id:schema.merchantProduct.id}).from(schema.merchantProduct).where(eq(schema.merchantProduct.venueId,v.id)).limit(1)
     const [menu] = await db.select().from(schema.merchantMenuState).where(eq(schema.merchantMenuState.venueId,v.id))
-    if ((order || loyalty || catalogProduct || (menu && (menu.publishedRevision > 0 || menu.draftProducts !== null))) && input.fiatCurrency !== current.fiatCurrency)
+    const [stockItem]=await db.select({id:schema.merchantInventoryItem.id}).from(schema.merchantInventoryItem).where(eq(schema.merchantInventoryItem.venueId,v.id)).limit(1)
+    if ((order || loyalty || catalogProduct || stockItem || (menu && (menu.publishedRevision > 0 || menu.draftProducts !== null))) && input.fiatCurrency !== current.fiatCurrency)
       return fail(409, 'CURRENCY_LOCKED')
     const [updated] = await db
       .update(schema.merchantVenue)
@@ -1183,6 +1204,51 @@ export async function merchantRoutes(app: FastifyInstance) {
       return view(updated, tx as unknown as Db)
     })
   })
+  app.get(`${base}/orders/:orderId/cash/receipt`,async req=>{
+    const a=await actor(req),o=await orderFor(a,params(req).orderId);
+    if(!o.cashReceiptId)return fail(404,'NOT_FOUND');
+    const [receipt]=await db.select().from(schema.merchantCashReceipt).where(and(eq(schema.merchantCashReceipt.id,o.cashReceiptId),eq(schema.merchantCashReceipt.orderId,o.id)));
+    if(!receipt)return fail(404,'NOT_FOUND');return cashView(receipt);
+  })
+  app.post(`${base}/orders/:orderId/cash/confirm`,async req=>{
+    const fresh=await uncachedActor(req);if(fresh.kind!=='cashier')return fail(403,'CASHIER_REQUIRED');const a=fresh;
+    const input=CashSaleInput.parse(req.body),key=req.headers['idempotency-key'];
+    if(typeof key!=='string'||key.length<1||key.length>128)return fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    const initial=await orderFor(a,params(req).orderId);
+    if(initial.employeeId!==a.employeeId)return fail(404,'NOT_FOUND');
+    const requestHash=digest(JSON.stringify(input));
+    return db.transaction(async raw=>{
+      const tx=raw as unknown as Db;
+      // Status/readiness and shift closing lock the shift before touching an order.
+      const [shift]=await tx.select().from(schema.merchantShift).where(and(eq(schema.merchantShift.id,initial.shiftId!),eq(schema.merchantShift.venueId,a.venueId),eq(schema.merchantShift.employeeId,a.employeeId))).for('update');
+      const o=await orderFor(a,initial.id,tx,true);
+      const authority=await uncachedActor(req,tx);
+      if(authority.kind!=='cashier'||authority.employeeId!==a.employeeId||authority.venueId!==a.venueId)return fail(403,'CASHIER_REQUIRED');
+      const [previous]=await tx.select().from(schema.merchantCashReceipt).where(eq(schema.merchantCashReceipt.orderId,o.id));
+      if(previous){if(previous.employeeId===a.employeeId&&previous.requestKey===key){if(previous.requestHash!==requestHash)return fail(409,'IDEMPOTENCY_CONFLICT');return {order:await view(o,tx),cashReceipt:cashView(previous)}}return fail(409,'INVALID_STATE')}
+      if(!shift||shift.closedAt)return fail(409,'SHIFT_REQUIRED');
+      if(o.source!=='COUNTER')return fail(409,'CASH_METHOD_UNAVAILABLE');
+      if(o.revision!==input.revision)return fail(409,'STALE_REVISION');
+      if(o.status!=='AWAITING_PAYMENT'||o.payment||o.paymentSnapshot||o.cashReceiptId)return fail(409,'INVALID_STATE');
+      if(o.payerUserId||o.claimSessionId||o.notificationAddress)return fail(409,'CASH_CUSTOMER_LINK_UNSUPPORTED');
+      const [loyalty]=await tx.select({orderId:schema.loyaltyCheckout.orderId}).from(schema.loyaltyCheckout).where(eq(schema.loyaltyCheckout.orderId,o.id)).limit(1);
+      if(loyalty)return fail(409,'CASH_CUSTOMER_LINK_UNSUPPORTED');
+      const [attempt]=await tx.select({id:schema.merchantTransferAttempt.id}).from(schema.merchantTransferAttempt).where(and(eq(schema.merchantTransferAttempt.orderId,o.id),eq(schema.merchantTransferAttempt.purpose,'PAYMENT'))).limit(1);
+      if(o.quote||o.quoteHistory.length||o.pendingPaymentHash||attempt)return fail(409,'CRYPTO_PAYMENT_IN_PROGRESS');
+      const [pendingDiscount]=await tx.select({id:schema.merchantDiscount.orderId}).from(schema.merchantDiscount).where(and(eq(schema.merchantDiscount.orderId,o.id),eq(schema.merchantDiscount.status,'PENDING')));
+      if(pendingDiscount)return fail(409,'DISCOUNT_APPROVAL_PENDING');
+      const [venue]=await tx.select({currency:schema.merchantVenue.fiatCurrency}).from(schema.merchantVenue).where(eq(schema.merchantVenue.id,o.venueId));
+      if(venue.currency!==o.fiatCurrency)return fail(409,'CASH_CURRENCY_CHANGED');
+      if(input.tenderedMinor<o.totalMinor)return fail(409,'INSUFFICIENT_CASH');
+      await priced(o.venueId,o.lines,tx);
+      const snapshot={revision:o.revision,lines:o.lines,totalMinor:o.totalMinor};
+      const [receipt]=await tx.insert(schema.merchantCashReceipt).values({orderId:o.id,venueId:o.venueId,employeeId:a.employeeId,shiftId:shift.id,currency:o.fiatCurrency as CashReceipt['currency'],dueMinor:o.totalMinor,tenderedMinor:input.tenderedMinor,changeMinor:input.tenderedMinor-o.totalMinor,orderRevision:o.revision,paidSnapshot:snapshot,requestKey:key,requestHash}).returning();
+      const [updated]=await tx.update(schema.merchantOrder).set({paymentMethod:'CASH',cashReceiptId:receipt.id,paymentSnapshot:snapshot,status:'PREPARING',revision:o.revision+1}).where(eq(schema.merchantOrder.id,o.id)).returning();
+      await consumeCashOrderStock(tx,updated);
+      await audit(tx,a,o.venueId,'order.cash.confirmed','Cash physically received',null,{receiptId:receipt.id,amountMinor:receipt.dueMinor,currency:receipt.currency});
+      return {order:await view(updated,tx),cashReceipt:cashView(receipt)};
+    });
+  })
   app.post(`${base}/orders/:orderId/status`, async (req) => {
     const a = await cashier(req)
     const input = z
@@ -1365,11 +1431,13 @@ export async function merchantRoutes(app: FastifyInstance) {
       if (o.source === 'COUNTER') await priced(o.venueId, o.lines, tx as unknown as Db)
       if (o.source === 'REMOTE') {
         if (!env.remoteOrderingEnabled) return fail(409, 'VENUE_UNAVAILABLE')
+        // Serialize queue decisions without blocking FK KEY SHARE checks from
+        // POS reservations or reward movements that already hold stock locks.
         const [v] = await tx
           .select()
           .from(schema.merchantVenue)
           .where(eq(schema.merchantVenue.id, o.venueId))
-          .for('update')
+          .for('no key update')
         const [open] = await tx
           .select()
           .from(schema.merchantShift)
@@ -1521,6 +1589,7 @@ export async function merchantRoutes(app: FastifyInstance) {
       )
       if (o.source === 'REMOTE' && o.status === 'AWAITING_ACCEPTANCE')
         return fail(409, 'REMOTE_DECISION_REQUIRED')
+      if (o.cashReceiptId) return fail(409, 'CASH_REFUND_NOT_AVAILABLE')
       if (!o.payment) return fail(409, 'NOT_PAID')
       const [existing] = await tx
         .select()
@@ -1663,6 +1732,7 @@ export async function merchantRoutes(app: FastifyInstance) {
   await handoverRoutes(app, { actor, venueFor, audit })
   await dayCloseRoutes(app, { actor, venueFor, audit })
   await financeRoutes(app, { actor, venueFor, audit })
+  await cashRefundRoutes(app, {freshActor:uncachedActor,venueFor,audit})
   await recipeRoutes(app, { actor, venueFor, audit })
   await productionRoutes(app, { actor, venueFor, audit })
   await stockMenuRoutes(app, { actor, venueFor, audit })

@@ -1,8 +1,9 @@
+import {historyPurchases} from '../services/historyPurchases';
 import {randomUUID} from 'node:crypto';
 import {and,asc,eq,sql} from 'drizzle-orm';
 import {z} from 'zod';
 import type {FastifyInstance,FastifyRequest} from 'fastify';
-import {PurchaseDraftInput,type PurchaseOrder,type PurchaseSuggestion,type InventorySupplier,type InventoryDelivery} from '@nimble/shared';
+import {HistoryPurchaseQuery,PurchaseDraftInput,type PurchaseOrder,type PurchaseSuggestion,type InventorySupplier,type InventoryDelivery} from '@nimble/shared';
 import type {Db} from '../db/client';
 import * as s from '../db/schema';
 import {inventoryItem,inventoryRetry} from '../services/inventory';
@@ -14,6 +15,7 @@ export async function purchasingRoutes(app:FastifyInstance,h:MerchantTaskHelpers
  async function context(req:FastifyRequest){const a=await h.actor(req),venueId=z.string().uuid().parse((req.params as any).venueId);await h.venueFor(a,venueId);if(a.kind!=='owner'&&!a.permissions?.includes('inventory.manage'))fail(403,'FORBIDDEN');return {a,venueId}}
  async function supplier(store:Db,venueId:string,id:string){const [row]=await store.select().from(s.merchantStockOperation).where(and(eq(s.merchantStockOperation.id,id),eq(s.merchantStockOperation.venueId,venueId),eq(s.merchantStockOperation.kind,'SUPPLIER')));if(!row)return fail(404,'SUPPLIER_NOT_FOUND');const value=row.data as InventorySupplier;if(!value.active)fail(409,'SUPPLIER_INACTIVE');return value}
  async function get(store:Db,venueId:string,id:string){const [row]=await store.select().from(s.merchantStockOperation).where(and(eq(s.merchantStockOperation.id,id),eq(s.merchantStockOperation.venueId,venueId),eq(s.merchantStockOperation.kind,'PURCHASE_ORDER'))).for('update');if(!row)return fail(404,'NOT_FOUND');return row.data as PurchaseOrder}
+ app.get(base+'/history',async req=>{const {venueId}=await context(req);return historyPurchases(db,venueId,HistoryPurchaseQuery.parse(req.query))});
  app.get(base+'/suggestions',async req=>{
   const {venueId}=await context(req);
   return db.transaction(async tx=>{const store=tx as unknown as Db,items=await tx.select().from(s.merchantInventoryItem).where(and(eq(s.merchantInventoryItem.venueId,venueId),eq(s.merchantInventoryItem.tracked,true))).orderBy(asc(s.merchantInventoryItem.name),asc(s.merchantInventoryItem.id)),availability=await stockAvailabilityBatch(store,items);

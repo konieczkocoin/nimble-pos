@@ -19,6 +19,9 @@ export function InventoryBoard({ api, venueId, scope, owner = false, manage = fa
     currency?: 'EUR' | 'USD' | 'PLN';
 }) {
     const [items, setItems] = useState<Item[]>([]), [selected, setSelected] = useState<string | null>(null), [history, setHistory] = useState<Movement[]>([]), [error, setError] = useState<string | null>(null), [busy, setBusy] = useState(false), [adding, setAdding] = useState(false);
+    const [loading,setLoading]=useState(true);
+    const errorFocus=useRef<HTMLParagraphElement|null>(null);
+    useEffect(()=>{if(error)errorFocus.current?.focus()},[error]);
     const [page, setPage] = useState(0), [more, setMore] = useState(false), [historyPage, setHistoryPage] = useState(0), [historyMore, setHistoryMore] = useState(false);
     const [settingsRevision,setSettingsRevision]=useState(1),[showOperations,setShowOperations]=useState(false),[showProduction,setShowProduction]=useState(false),[showImpact,setShowImpact]=useState(false),[showLots,setShowLots]=useState(false),[showPurchases,setShowPurchases]=useState(false);
     const [barcode,setBarcode]=useState(''), [lookup,setLookup]=useState(''), [lookupBusy,setLookupBusy]=useState(false);
@@ -32,15 +35,15 @@ export function InventoryBoard({ api, venueId, scope, owner = false, manage = fa
         key: string;
     } | null>(null);
     const path = `/venues/${venueId}/inventory`, auth = owner ? 'owner' : 'cashier', current = items.find(i => i.id === selected);
-    const load = useCallback(async (nextPage = 0) => { const g = generation.current, n = ++requests.current; const result = await api.request<{
+    const load = useCallback(async (nextPage = 0) => { const g = generation.current, n = ++requests.current;setLoading(true);try{const result = await api.request<{
         items: Item[];
         hasMore: boolean;
     }>(auth, 'GET', `${path}?page=${nextPage}&limit=50`); if (g === generation.current && n === requests.current) {
         setItems(old => nextPage ? [...old, ...result.items] : result.items);
         setPage(nextPage);
         setMore(result.hasMore);
-    } }, [api, auth, path]);
-    useEffect(() => { const g = ++generation.current; requests.current++; setItems([]); setSelected(null); setLookup(''); setBarcode(''); setShowOperations(false); setShowProduction(false); setShowImpact(false); setShowLots(false); setShowPurchases(false); setLookupBusy(false); lookupRequest.current++; setHistory([]); setMore(false); setHistoryMore(false); setHistoryPage(0); setPage(0); setError(null); setBusy(false); setAdding(false); setReason(''); retry.current = null; lock.current = false; void load().catch(e => { if (g === generation.current) {
+    }}finally{if(g===generation.current&&n===requests.current)setLoading(false)} }, [api, auth, path]);
+    useEffect(() => { const g = ++generation.current; requests.current++; setLoading(true);setItems([]); setSelected(null); setLookup(''); setBarcode(''); setShowOperations(false); setShowProduction(false); setShowImpact(false); setShowLots(false); setShowPurchases(false); setLookupBusy(false); lookupRequest.current++; setHistory([]); setMore(false); setHistoryMore(false); setHistoryPage(0); setPage(0); setError(null); setBusy(false); setAdding(false); setReason(''); retry.current = null; lock.current = false; void load().catch(e => { if (g === generation.current) {
         setItems([]);
         setError(merchantError(e));
     } }); return () => { generation.current++; requests.current++; }; }, [load, scope, manage, canCosts]);
@@ -120,7 +123,7 @@ export function InventoryBoard({ api, venueId, scope, owner = false, manage = fa
         }catch(e){if(g===generation.current&&n===lookupRequest.current)setError(merchantError(e));}
         finally{if(g===generation.current&&n===lookupRequest.current)setLookupBusy(false);}
     };
-    return <section className="m-panel"><h2>{t('Inventory')}</h2><p>{t('Linked, tracked resources are reserved at checkout and deducted after counter payment confirmation or remote order acceptance. Unlinked and untracked resources are unaffected.')}</p>{error && <p role="alert">{error}</p>}<button disabled={busy} onClick={() => void refresh()}>{t('Refresh stock')}</button>
+    return <section className="m-panel"><h2>{t('Inventory')}</h2><p>{t('Linked, tracked resources are reserved at checkout and deducted after counter payment confirmation or remote order acceptance. Unlinked and untracked resources are unaffected.')}</p>{loading&&<p role="status">{t('Loading stock…')}</p>}{!loading&&!error&&!items.length&&<p>{t('No stock items yet.')}</p>}{error && <p role="alert" tabIndex={-1} ref={errorFocus}>{error}</p>}<button disabled={busy} onClick={() => void refresh()}>{t('Refresh stock')}</button>
  <form onSubmit={e=>{e.preventDefault();void findBarcode(lookup);}}><label>{t('Find stock item by barcode')}<input value={lookup} disabled={busy || lookupBusy} maxLength={100} onChange={e=>setLookup(e.target.value)}/></label><button disabled={busy||lookupBusy||!lookup.trim()}>{t('Find barcode')}</button></form><InventoryBarcodeScanner key={`${venueId}:${scope}:${manage}:${canCosts}`} disabled={busy||lookupBusy} onRead={value=>void findBarcode(value)}/>
  <div className="m-grid">{items.map(item => <article className="m-panel" key={item.id}><button disabled={busy} aria-pressed={selected === item.id} onClick={() => choose(item)}>{item.name}</button><p>{t('Physical stock')}: {item.quantity}{item.available===false&&<strong> · {t('Blocked for new sales')}</strong>}</p><p>{t('Reserved stock')}: {item.reservedQuantity ?? t('Unavailable')}</p><p>{t('Pending losses')}: {item.pendingLossQuantity ?? t('Unavailable')}</p><p>{t('Available to sell')}: {item.availableQuantity ?? t('Unavailable')} {t(({PIECE:'pieces',PORTION:'portions',MILLIGRAM:'mg',MILLILITRE:'ml'})[item.unit])}</p><small>{t(item.tracked ? 'Stock tracking enabled' : 'Stock tracking paused')}</small>{item.tracked && item.availableQuantity !== undefined && item.availableQuantity <= item.threshold && <p>{t('Low stock')}</p>}</article>)}</div>
  {manage && <button disabled={busy} onClick={() => { setAdding(true); setSelected(null); setName(''); setBarcode(''); setUnit('PIECE'); setTracked(true); setSaleAvailable(true); setOpening('0'); setThreshold('0'); setReason(''); }}>{t('Add stock item')}</button>}

@@ -5,6 +5,12 @@ const { db, close } = await freshDb()
 const { app, tokenFor } = authedApp(db)
 afterAll(async () => { await app.close(); await close() })
 const key = () => crypto.randomUUID()
+function beforeDeadline<T>(pending:PromiseLike<T>,message:string):Promise<T>{
+  return new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>reject(new Error(message)),5000)
+    Promise.resolve(pending).then(value=>{clearTimeout(timer);resolve(value)},error=>{clearTimeout(timer);reject(error)})
+  })
+}
 it('accepts a reward only when stock is available, atomically spends stamps and never consumes twice', async () => {
   const owner = { authorization: `Bearer ${await tokenFor(await makeUser(db, 'NQ-reward-stock-owner'))}` }
   const customer = { authorization: `Bearer ${await tokenFor(await makeUser(db, 'NQ-reward-stock-customer'))}` }
@@ -96,10 +102,35 @@ it('accepts a reward only when stock is available, atomically spends stamps and 
       expect(created.statusCode, created.body).toBe(201)
       contenders.push(created.json())
     }
-    const [pos, remote, rewardResult] = await Promise.all([
-      ...contenders.map((order, index) => app.inject({ method: 'POST', headers: index === 1 ? remoteCustomer : {}, url: `/v1/merchant/checkout/${order.checkoutToken}/quote`, payload: { revision: 1, asset: 'NIM', sender: index === 1 ? 'NQ-threeway-remote-customer' : 'NQ-reward-stock-customer' } })),
-      app.inject({ method: 'POST', url: base + '/loyalty/accept', headers: { ...cashier, 'idempotency-key': key() }, payload: { token: raceReward.token } }),
-    ])
+    // Pause the external quote provider after the remote queue decision is locked.
+    // Other public operations must still settle without waiting for that provider.
+    const gateway=app.deps.merchantPayments!
+    let entered!:()=>void,release!:()=>void
+    const atProvider=new Promise<void>(resolve=>{entered=resolve})
+    const providerReleased=new Promise<void>(resolve=>{release=resolve})
+    app.deps.merchantPayments={...gateway,quote:async input=>{
+      const quote=await gateway.quote(input)
+      if(input.sender==='NQ-threeway-remote-customer'){entered();await providerReleased}
+      return quote
+    }}
+    const remotePending=app.inject({method:'POST',headers:remoteCustomer,url:`/v1/merchant/checkout/${contenders[1].checkoutToken}/quote`,payload:{revision:1,asset:'NIM',sender:'NQ-threeway-remote-customer'}})
+    type Response=Awaited<typeof remotePending>
+    let otherRequests:Promise<[Response,Response]>|undefined
+    let pos!:Response,remote!:Response,rewardResult!:Response
+    try{
+      await beforeDeadline(atProvider,'Remote quote did not reach the provider')
+      otherRequests=Promise.all([
+        app.inject({method:'POST',url:`/v1/merchant/checkout/${contenders[0].checkoutToken}/quote`,payload:{revision:1,asset:'NIM',sender:'NQ-reward-stock-customer'}}),
+        app.inject({method:'POST',url:base+'/loyalty/accept',headers:{...cashier,'idempotency-key':key()},payload:{token:raceReward.token}}),
+      ])
+      ;[pos,rewardResult]=await beforeDeadline(otherRequests,'POS and reward are blocked by an unrelated remote quote provider')
+      release()
+      remote=await remotePending
+    }finally{
+      release()
+      await Promise.allSettled([remotePending,...(otherRequests?[otherRequests]:[])])
+      app.deps.merchantPayments=gateway
+    }
     expect([pos.statusCode, remote.statusCode, rewardResult.statusCode].sort()).toEqual([200, 409, 409])
     for (const response of [pos, remote, rewardResult].filter(response => response.statusCode !== 200)) {
       expect(response.json().error.code).toBe('INSUFFICIENT_STOCK')
@@ -114,4 +145,4 @@ it('accepts a reward only when stock is available, atomically spends stamps and 
     env.remoteOrderingEnabled = priorRemoteFlag
   }
 
-})
+},15000)
