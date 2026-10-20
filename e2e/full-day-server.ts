@@ -12,7 +12,7 @@ await migrate(db,{migrationsFolder:new URL('../apps/api/drizzle',import.meta.url
 const app=buildApp({db,events:new SessionEvents(),hostVerifier:{scheme:'mock',challenge:n=>`Full-day SIMULATED identity ${n}`,verify:async({payload})=>{const key=payload.publicKey??'';if(!key.startsWith('mock-pk:'))return null;const address=key.slice(8);return {subject:address,payoutAddress:address}}},rates:{getUsdPerNim:async()=>1},merchantPayments:{
  displayRates:async()=>({NIM:{value:'1',at:new Date().toISOString(),source:'FULL_DAY_SIMULATION'},USDT:null}),
  quote:async input=>{if(input.asset!=='NIM'||input.fiatCurrency!=='EUR')throw new Error('Full-day simulator supports EUR/NIM only');return {...input,id:crypto.randomUUID(),network:'nimiq:5',chainHeight:100,amountAtomic:(BigInt(input.totalMinor)*1000n).toString(),issuedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+120000).toISOString(),rate:'1',rateAt:new Date().toISOString(),rateSource:'FULL_DAY_SIMULATION'}},
- verify:async({hash,quote})=>hash==='a'.repeat(64)?{...quote,hash,confirmedAt:new Date().toISOString()}:null,
+ verify:async({hash,quote})=>{if(process.env.ACCEPTANCE_SUITE==='recovery'&&hash==='b'.repeat(64))throw new Error('SIMULATED provider timeout');return hash==='a'.repeat(64)?{...quote,hash,confirmedAt:new Date().toISOString()}:null},
 }})
 app.addHook('onClose',async()=>{await sql.end()})
 await app.listen({port:3100,host:'127.0.0.1'})

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "playwright test",
     "test:full-day": "node ../scripts/test-full-day.mjs",
-    "typecheck:full-day": "tsc -p tsconfig.full-day.json --noEmit"
+    "typecheck:full-day": "tsc -p tsconfig.full-day.json --noEmit",
+    "test:acceptance": "node ../scripts/test-acceptance.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",

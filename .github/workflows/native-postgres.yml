@@ -82,3 +82,8 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: native-postgres
     uses: ./.github/workflows/full-day.yml
+
+  acceptance:
+    if: github.event_name == 'pull_request'
+    needs: full-day
+    uses: ./.github/workflows/acceptance.yml
