@@ -74,7 +74,7 @@ test('SIMULATED wallet/chain: a full venue day uses real routes, native DB and f
    const availability=await changed<RemoteVenue>(cashier,`/remote/venues/${f.venue.id}/availability`,()=>cashier.getByLabel('Accept new remote orders',{exact:true}).click())
    expect(availability.accepting).toBe(true);await expect(cashier.getByLabel('Accept new remote orders',{exact:true})).toBeChecked()
    await expect.poll(async()=>(await customerApi<{venue:RemoteVenue}>('GET','/remote/venues/'+f.venue.id)).venue.available).toBe(true)
-   await customer.goto('/venues/'+f.venue.id);await customer.getByRole('button',{name:/^Full-day coffee/}).click();await customer.getByRole('button',{name:/^Add to basket/}).click()
+   await customer.goto('/venues/'+f.venue.id);await customer.getByRole('button',{name:/Full-day coffee/}).click();await customer.getByRole('button',{name:/^Add to basket/}).click()
    remote=await changed<MerchantOrder>(customer,'/remote'+f.base+'/orders',()=>customer.getByRole('button',{name:/^Place order/}).click())
    await customer.getByRole('link',{name:/^Review & pay/}).click();await customer.getByRole('button',{name:'Join loyalty card',exact:true}).click()
    await expect(customer.getByLabel('Collect a stamp for this purchase',{exact:true})).toBeChecked()
