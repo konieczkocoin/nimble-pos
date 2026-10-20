@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [recovery]
+        suite: [recovery, mobile]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -58,4 +58,5 @@ jobs:
             acceptance.log
             acceptance-results.json
             e2e/test-results/**/error-context.md
+            e2e/test-results/**/*.png
           retention-days: 14

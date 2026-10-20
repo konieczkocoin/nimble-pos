@@ -4,14 +4,14 @@ import {expect,type Browser,type Page} from '@playwright/test'
 export const API='http://localhost:3100'
 export const EXPECTED={afterDelivery:{raw:120,finished:0},afterProduction:{raw:100,finished:10},afterCash:{raw:100,finished:9},afterRemote:{raw:100,finished:8},afterLoss:{raw:100,finished:7},money:{list:'2500',discount:'500',sales:'2000',cashReceived:'750',cashRefunded:'750',cashNet:'0',netSales:'1250',nimAtomic:'1250000'},loyaltyStamps:1} as const
 export async function json<T=unknown>(response:{ok():boolean;url():string;status():number;text():Promise<string>;json():Promise<unknown>}){expect(response.ok(),`${response.url()} → ${response.status()} ${await response.text()}`).toBeTruthy();return await response.json() as T}
-export async function actorPage(browser:Browser,role:string){
- const ctx=await browser.newContext({locale:'en-GB',timezoneId:'Europe/Warsaw'}),page=await ctx.newPage()
- await ctx.addInitScript(({address})=>{
+export async function actorPage(browser:Browser,role:string,locale='en-GB'){
+ const ctx=await browser.newContext({locale,timezoneId:'Europe/Warsaw'}),page=await ctx.newPage()
+ await ctx.addInitScript(({address,language})=>{
   localStorage.setItem('nimble.mockAddress',address)
   // Wallet/host boundary only. No business route interception and no actual signature/transfer.
   const transfers:{recipient:string;value:number;data:string}[]=[]
-  Object.assign(window,{__fullDayTransfers:transfers,nimiqPay:{network:'testnet',language:'en'},nimiq:{listAccounts:async()=>[address],getNetworkId:async()=>5,isConsensusEstablished:async()=>true,getBlockNumber:async()=>100,sendBasicTransactionWithData:async(tx:{recipient:string;value:number;data:string})=>{transfers.push(tx);return 'a'.repeat(64)}}})
- },{address:`NQ07 FULLDAY ${role} ${crypto.randomUUID().slice(0,8)}`})
+  Object.assign(window,{__fullDayTransfers:transfers,nimiqPay:{network:'testnet',language},nimiq:{listAccounts:async()=>[address],getNetworkId:async()=>5,isConsensusEstablished:async()=>true,getBlockNumber:async()=>100,sendBasicTransactionWithData:async(tx:{recipient:string;value:number;data:string})=>{transfers.push(tx);return 'a'.repeat(64)}}})
+ },{address:`NQ07 FULLDAY ${role} ${crypto.randomUUID().slice(0,8)}`,language:locale.split('-')[0]})
  return page
 }
 export async function ownerToken(page:Page){const token=await page.evaluate(()=>localStorage.getItem('nimble.jwt'));expect(token).toBeTruthy();return token!}
