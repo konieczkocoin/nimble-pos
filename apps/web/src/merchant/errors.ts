@@ -116,10 +116,10 @@ export function merchantError(error: unknown): string {
   if (messages[code])
     return t(messages[code]);
   if (error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name))
-    return 'The request took too long. Please check your connection and retry.';
+    return t('The request took too long. Please check your connection and retry.');
   if (error instanceof ApiError)
-    return 'We could not complete this action. Refresh the page and try again.';
-  return error instanceof Error && !/^[A-Z_]+$/.test(error.message) && !/rpc|eth_|eip155|nimiq:|provider|fetch|json/i.test(error.message) ? error.message : 'Please try again in a moment.';
+    return t('We could not complete this action. Refresh the page and try again.');
+  return error instanceof Error && !/^[A-Z_]+$/.test(error.message) && !/rpc|eth_|eip155|nimiq:|provider|fetch|json/i.test(error.message) ? error.message : t('Please try again in a moment.');
 }
 export function networkName(network: string): string {
   return ({ 'nimiq:24': 'Nimiq mainnet', 'nimiq:5': 'Nimiq testnet', 'eip155:137': 'Polygon', demo: 'Simulated' } as Record<string, string>)[network] ?? 'Wallet network';

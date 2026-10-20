@@ -126,9 +126,9 @@ function Frame({
         </Link>
         <div className="m-header-right">
           {demo ? (
-            <span className="m-demo">DEMO · no real funds</span>
+            <span className="m-demo">{t("DEMO · no real funds")}</span>
           ) : (
-            <span className="m-label">COUNTER</span>
+            <span className="m-label">{t("COUNTER")}</span>
           )}
           <Link to="/venues">{t('Order ahead')}</Link><Link to="/orders">{t('My orders')}</Link><Link to="/merchant/cards">{t('My loyalty cards')}</Link>
           {actions}
@@ -136,8 +136,8 @@ function Frame({
       </header>
       {children}
       <footer className="m-footer">
-        <span>Made for good moments.</span>
-        <Link to="/">Pay by code ↗</Link>
+        <span>{t("Made for good moments.")}</span>
+        <Link to="/">{t("Pay by code ↗")}</Link>
       </footer>
     </main>
   )
@@ -486,12 +486,12 @@ function Owner({
     <>
       <div className="m-heading">
         <div>
-          <span className="m-label">OWNER WORKSPACE</span>
+          <span className="m-label">{t('Owner workspace')}</span>
           <h1>{venue?.name ?? 'Create your venue.'}</h1>
         </div>
         {venues.length > 1 && (
           <select
-            aria-label="Venue"
+            aria-label={t('Venue')}
             value={venue?.id ?? ''}
             onChange={(e) =>
               setVenue(venues.find((v) => v.id === e.target.value) ?? null)
@@ -505,7 +505,7 @@ function Owner({
           </select>
         )}
       </div>
-      <nav className="m-tabs" aria-label="Owner sections">
+      <nav className="m-tabs" aria-label={t('Owner sections')}>
         {['Overview', 'Payments', 'Financial reconciliation', 'Menu', 'Team', 'Schedule', 'Decision history', 'Day closing', 'Handover', 'Work time', 'Staff tasks', 'Inventory', 'Loyalty', 'Remote orders', 'Terminal', 'Venue'].map((label) => (
           <button key={label} aria-pressed={tab === label} onClick={() => setTab(label)}>
             {t(label)}
@@ -803,7 +803,7 @@ function Owner({
           {pairToken && (
             <div className="m-soft">
               <label>
-                Pairing token
+                {t("Pairing token")}
                 <textarea readOnly value={pairToken} />
               </label>
               <button
@@ -933,7 +933,7 @@ function EmployeeForm({
         />
       </label>
       <label>
-        Personal PIN
+        {t("Personal PIN")}
         <input
           required
           type="password"
@@ -1206,7 +1206,7 @@ function Terminal({
       !Number.isFinite(Number(rate.value)) ||
       Number(rate.value) <= 0
     )
-      return 'Live estimate unavailable · quote at checkout'
+      return t('Live estimate unavailable · quote at checkout')
     return `≈ ${(minor / 100 / Number(rate.value)).toLocaleString('en', { maximumFractionDigits: displayAsset === 'NIM' ? 5 : 6 })} ${displayAsset}`
   }
   const run = async (
@@ -1276,13 +1276,13 @@ function Terminal({
     return (
       <>
         <section className="m-heading">
-          <span className="m-label">SHARED TERMINAL</span>
+          <span className="m-label">{t("SHARED TERMINAL")}</span>
           <h1>
-            A good shift
+            {t("A good shift")}
             <br />
-            starts here.
+            {t("starts here.")}
           </h1>
-          <p>Choose your profile. Your PIN keeps your shift personal.</p>
+          <p>{t("Choose your profile. Your PIN keeps your shift personal.")}</p>
         </section>
         <Notice text={notice} />
         {!venue && !demo ? (
@@ -1296,12 +1296,12 @@ function Terminal({
               }, 'Phone paired. Choose your cashier profile.')
             }}
           >
-            <h2>Pair this phone</h2>
+            <h2>{t("Pair this phone")}</h2>
             <p className="m-muted">
-              Enter the pairing token generated on the owner’s personal phone.
+              {t("Enter the pairing token generated on the owner’s personal phone.")}
             </p>
             <label>
-              Pairing token
+              {t("Pairing token")}
               <textarea
                 required
                 value={terminalToken}
@@ -1310,20 +1310,20 @@ function Terminal({
               />
             </label>
             <button className="m-primary" disabled={busy}>
-              Pair terminal →
+              {t("Pair terminal →")}
             </button>
           </form>
         ) : (
           <form className="m-panel m-form" onSubmit={signIn}>
             <span className="m-label">{venue?.name}</span>
             <label>
-              Cashier profile
+              {t("Cashier profile")}
               <select
                 required
                 value={profile}
                 onChange={(e) => setProfile(e.target.value)}
               >
-                <option value="">Choose your name</option>
+                <option value="">{t("Choose your name")}</option>
                 {profiles
                   .filter((p) => p.active)
                   .map((p) => (
@@ -1334,7 +1334,7 @@ function Terminal({
               </select>
             </label>
             <label>
-              Personal PIN
+              {t("Personal PIN")}
               <input
                 required
                 type="password"
@@ -1347,7 +1347,7 @@ function Terminal({
             </label>
             {demo && <small>Anna: 1234 · Leo: 5678</small>}
             <button className="m-primary" disabled={busy}>
-              Start your day →
+              {t("Start your day →")}
             </button>
             {!demo && (
               <button
@@ -1358,7 +1358,7 @@ function Terminal({
                   setProfiles([])
                 }}
               >
-                Pair a different terminal
+                {t("Pair a different terminal")}
               </button>
             )}
           </form>
@@ -1373,16 +1373,16 @@ function Terminal({
           <h1>
             {tab === 'Inventory' ? t('Inventory') : tab === 'Management' ? t('Manage your venue') : tab === 'Sale' ? (
               <>
-                Something good
+                {t("Something good")}
                 <br />
-                for your day.
+                {t("for your day.")}
               </>
             ) : tab === 'Queue' ? (
-              'The daily rhythm.'
+              t('The daily rhythm.')
             ) : tab === 'Availability' ? (
-              'Fresh, when it is.'
+              t('Fresh, when it is.')
             ) : (
-              'Your shift.'
+              t('Your shift.')
             )}
           </h1>
         </div>
@@ -1397,11 +1397,11 @@ function Terminal({
           <small>
             {session.employee.name}
             <br />
-            <span>{shift ? '● Shift open' : 'Shift closed'}</span>
+            <span>{shift ? '● '+t('Shift open') : t('Shift closed')}</span>
           </small>
         </div>
       </div>
-      <nav className="m-tabs" aria-label="Cashier sections">
+      <nav className="m-tabs" aria-label={t('Cashier sections')}>
         {['Sale', 'Queue', 'Availability', 'Shift', ...(verifiedAuthority === session.token && hasPermission(session.employee,'reports.view') && hasPermission(session.employee,'tasks.manage') ? ['Day closing'] : []), 'Handover', 'Work time', 'Schedule', 'Staff tasks', 'Inventory', ...(verifiedAuthority === session.token && (hasPermission(session.employee,'menu.manage') || hasPermission(session.employee,'reports.view') || hasPermission(session.employee,'audit.view')) ? ['Management'] : [])].map((label) => (
           <button key={label} aria-pressed={tab === label} onClick={() => setTab(label)}>
             {t(label)}
@@ -1420,8 +1420,8 @@ function Terminal({
       {!shift && (
         <section className="m-soft m-row">
           <div>
-            <strong>Open your personal shift.</strong>
-            <small>Sales are recorded under your cashier profile.</small>
+            <strong>{t("Open your personal shift.")}</strong>
+            <small>{t("Sales are recorded under your cashier profile.")}</small>
           </div>
           <button
             className="m-primary"
@@ -1430,7 +1430,7 @@ function Terminal({
               void run(() => (demo ? demo.openShift() : api.openShift()))
             }
           >
-            Open shift →
+            {t("Open shift →")}
           </button>
         </section>
       )}
@@ -1451,9 +1451,9 @@ function Terminal({
           <div className="m-row">
             <span className="m-label">MENU · {venue?.fiatCurrency}</span>
             <label className="m-rate-selector">
-              Estimates in
+              {t("Estimates in")}
               <select
-                aria-label="Display payment estimates in"
+                aria-label={t('Display payment estimates in')}
                 value={displayAsset}
                 onChange={(e) =>
                   setDisplayAsset(e.target.value as MerchantAsset)
@@ -1464,14 +1464,14 @@ function Terminal({
               </select>
             </label>
           </div>
-          <nav className="m-categories" aria-label="Menu categories">
+          <nav className="m-categories" aria-label={t('Menu categories')}>
             {['All', ...new Set(products.map((p) => p.category))].map((c) => (
               <button
                 key={c}
                 aria-pressed={category === c}
                 onClick={() => setCategory(c)}
               >
-                {c}
+                {c === 'All' ? t('All') : c}
               </button>
             ))}
           </nav>
@@ -1508,7 +1508,7 @@ function Terminal({
                 ))}
               {!products.length && (
                 <p className="m-muted">
-                  The owner can add products in the Menu workspace.
+                  {t("The owner can add products in the Menu workspace.")}
                 </p>
               )}
             </div>
@@ -1517,11 +1517,11 @@ function Terminal({
                 <span className="m-label">
                   {editing
                     ? `EDIT ORDER #${number(editing)}`
-                    : 'TODAY’S LITTLE JOYS'}
+                    : t('TODAY’S LITTLE JOYS')}
                 </span>
-                <small>{cart.reduce((n, x) => n + x.quantity, 0)} items</small>
+                <small>{cart.reduce((n, x) => n + x.quantity, 0)} {t("items")}</small>
               </div>
-              <h2>Your basket.</h2>
+              <h2>{t("Your basket.")}</h2>
               {cart.length ? (
                 cart.map((line, i) => {
                   const p = products.find((x) => x.id === line.productId)
@@ -1551,7 +1551,7 @@ function Terminal({
                         </small>
                         <div className="m-quantity">
                           <button
-                            aria-label={`Decrease ${p?.name}`}
+                            aria-label={`${t('Decrease')} ${p?.name}`}
                             onClick={() =>
                               setCart(
                                 cart.flatMap((x, j) =>
@@ -1568,7 +1568,7 @@ function Terminal({
                           </button>
                           <span>{line.quantity}</span>
                           <button
-                            aria-label={`Increase ${p?.name}`}
+                            aria-label={`${t('Increase')} ${p?.name}`}
                             disabled={line.quantity >= 99}
                             onClick={() =>
                               setCart(
@@ -1588,7 +1588,7 @@ function Terminal({
                         <strong>{money(price, venue?.fiatCurrency)}</strong>
                         <button
                           className="m-remove"
-                          aria-label={`Remove ${p?.name}`}
+                          aria-label={`${t('Remove')} ${p?.name}`}
                           onClick={() =>
                             setCart(cart.filter((_, j) => j !== i))
                           }
@@ -1601,9 +1601,9 @@ function Terminal({
                 })
               ) : (
                 <p className="m-muted">
-                  Choose something from the menu.
+                  {t("Choose something from the menu.")}
                   <br />
-                  We’ll take it from here.
+                  {t("We’ll take it from here.")}
                 </p>
               )}
               <button
@@ -1611,7 +1611,7 @@ function Terminal({
                 disabled={!cart.length || !shift || busy}
                 onClick={() => void createCheckout()}
               >
-                {editing ? 'Update checkout' : 'Share checkout'}
+                {editing ? t('Update checkout') : t('Share checkout')}
                 <span>{money(total, venue?.fiatCurrency)} →</span>
               </button>
               {editing && (
@@ -1621,39 +1621,38 @@ function Terminal({
                     setCart([])
                   }}
                 >
-                  Discard edit
+                  {t("Discard edit")}
                 </button>
               )}
               <small className="m-centered">
                 {cart.length ? `${estimate(total)} · ` : ''}
                 {demo
-                  ? 'Example rates · no real transactions'
-                  : 'Server confirms prices and availability'}
+                  ? t('Example rates · no real transactions')
+                  : t('Server confirms prices and availability')}
               </small>
             </section>
           </div>
           {activeShared && (
             <section className="m-panel m-share">
               <div>
-                <span className="m-label">ORDER #{number(activeShared)}</span>
+                <span className="m-label">{t("ORDER #")}{number(activeShared)}</span>
                 <h2>
-                  A moment for
+                  {t("A moment for")}
                   <br />
-                  your customer.
+                  {t("your customer.")}
                 </h2>
                 <Lines
                   order={orders.find((o) => o.id === activeShared.id) ?? activeShared}
                 />
                 {!cashBusy && !activeShared.cashReceipt && <p className="m-muted">
-                  Customer scans the QR or shows their six-digit Nimble payment
-                  code.
+                  {t("Customer scans the QR or shows their six-digit Nimble payment code.")}
                 </p>}
                 {demo ? (
                   <button
                     className="m-primary"
                     onClick={() => onCustomer?.(activeShared.id)}
                   >
-                    Open customer view →
+                    {t("Open customer view →")}
                   </button>
                 ) : !cashBusy && !activeShared.cashReceipt ? (
                   <>
@@ -1661,7 +1660,7 @@ function Terminal({
                       className="m-primary"
                       to={`/merchant/checkout/${activeShared.checkoutToken}`}
                     >
-                      Open customer checkout ↗
+                      {t("Open customer checkout ↗")}
                     </Link>
                     <form
                       className="m-form"
@@ -1674,7 +1673,7 @@ function Terminal({
                       }}
                     >
                       <label>
-                        Customer’s payment code
+                        {t("Customer’s payment code")}
                         <input
                           required
                           inputMode="numeric"
@@ -1684,7 +1683,7 @@ function Terminal({
                           onChange={(e) => setCode(e.target.value)}
                         />
                       </label>
-                      <button disabled={busy}>Pair code →</button>
+                      <button disabled={busy}>{t("Pair code →")}</button>
                     </form>
                   </>
                 ) : null}
@@ -1707,9 +1706,9 @@ function Terminal({
                     }}
                     disabled={cashBusy||activeShared.status !== 'AWAITING_PAYMENT'}
                   >
-                    Edit basket
+                    {t("Edit basket")}
                   </button>
-                  <button disabled={cashBusy} onClick={() => setShared(null)}>Back to menu</button>
+                  <button disabled={cashBusy} onClick={() => setShared(null)}>{t("Back to menu")}</button>
                 </div>
               </div>
               {!cashBusy && !activeShared.cashReceipt && <div className="m-centered">
@@ -1718,8 +1717,8 @@ function Terminal({
                 />
                 <small>
                   {demo
-                    ? 'Demo link · same browser example'
-                    : 'Scan to review & pay'}
+                    ? t('Demo link · same browser example')
+                    : t('Scan to review & pay')}
                 </small>
                 {!demo && (
                   <button
@@ -1735,7 +1734,7 @@ function Terminal({
                       )
                     }
                   >
-                    Copy checkout link
+                    {t("Copy checkout link")}
                   </button>
                 )}
               </div>}
@@ -1779,7 +1778,7 @@ function Terminal({
                           setTab('Sale')
                         }}
                       >
-                        Share checkout
+                        {t("Share checkout")}
                       </button>
                       <button
                         disabled={busy}
@@ -1814,7 +1813,7 @@ function Terminal({
                     </>
                   )}
                   {o.status === 'PREPARING' && demo && (
-                    <button className="m-primary" disabled={busy} onClick={()=>void run(()=>demo.advance(o.id))}>All items ready →</button>
+                    <button className="m-primary" disabled={busy} onClick={()=>void run(()=>demo.advance(o.id))}>{t("All items ready →")}</button>
                   )}
                   {o.status === 'READY' && (
                     <button
@@ -1828,7 +1827,7 @@ function Terminal({
                         )
                       }
                     >
-                      Mark collected ✓
+                      {t("Mark collected ✓")}
                     </button>
                   )}
                   {!demo&&o.cashReceipt&&<CashRefundControl api={api} order={o} scope={session.token} actorId={session.employee.id} authority="cashier" disabled={busy||!shift} onChanged={()=>void load().catch(e=>setNotice(merchantError(e)))}/>}
@@ -1843,7 +1842,7 @@ function Terminal({
                         )
                       }
                     >
-                      Request full refund
+                      {t("Request full refund")}
                     </button>
                   )}
                 </div>
@@ -1851,16 +1850,16 @@ function Terminal({
             ))}
           {!orders.length && (
             <section className="m-panel">
-              <h2>A quiet counter.</h2>
-              <p>Your orders will appear here after checkout.</p>
+              <h2>{t("A quiet counter.")}</h2>
+              <p>{t("Your orders will appear here after checkout.")}</p>
             </section>
           )}
         </div>
       ) : tab === 'Availability' ? (
         <section className="m-panel">
-          <h2>What’s available today?</h2>
+          <h2>{t("What’s available today?")}</h2>
           <p className="m-muted">
-            Manual availability for products and extras. No stock tracking.
+            {t("Manual availability for products and extras. No stock tracking.")}
           </p>
           {products.map((p) => (
             <div className="m-availability" key={p.id}>
@@ -1908,17 +1907,16 @@ function Terminal({
         <>
           <Report
             report={report}
-            title={`${session.employee.name.toUpperCase()} · PERSONAL SHIFT`}
+            title={`${session.employee.name.toUpperCase()} · ${t('Personal shift')}`}
           />
           <section className="m-panel">
-            <h2>A good day’s work.</h2>
+            <h2>{t("A good day’s work.")}</h2>
             <p className="m-muted">
-              Your summary covers only your shift. The owner sees venue-wide
-              reporting.
+              {t("Your summary covers only your shift. The owner sees venue-wide reporting.")}
             </p>
             {shift && (
               <p>
-                Opened{' '}
+                {t("Opened")}{' '}
                 {new Date(shift.openedAt).toLocaleTimeString('en', {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -1946,7 +1944,7 @@ function Terminal({
                     }, 'Shift closed. Your summary is ready.')
                   }
                 >
-                  Close my shift
+                  {t("Close my shift")}
                 </button>
               )}
               <button
@@ -1966,7 +1964,7 @@ function Terminal({
                   })
                 }
               >
-                Sign out / switch cashier
+                {t("Sign out / switch cashier")}
               </button>
             </div>
           </section>
@@ -1978,11 +1976,10 @@ function Terminal({
             className="m-primary"
             disabled={busy || !shift}
             onClick={() => void createCheckout()}
-            aria-label="Checkout basket"
+            aria-label={t('Checkout basket')}
           >
             <span>
-              {cart.reduce((count, line) => count + line.quantity, 0)} items ·
-              Checkout
+              {cart.reduce((count, line) => count + line.quantity, 0)} {t("items · Checkout")}
             </span>
             <span>{money(total, venue!.fiatCurrency)} →</span>
           </button>
@@ -2070,14 +2067,14 @@ export function Options({
         aria-labelledby="m-options-title"
       >
         <div className="m-row">
-          <span className="m-label">JUST THE WAY YOU LIKE IT</span>
-          <button aria-label="Close product options" onClick={onClose}>
+          <span className="m-label">{t("JUST THE WAY YOU LIKE IT")}</span>
+          <button aria-label={t('Close product options')} onClick={onClose}>
             ×
           </button>
         </div>
         <h2 id="m-options-title">{product.name}</h2>
         <label>
-          Size
+          {t("Size")}
           <select value={variant} onChange={(e) => setVariant(e.target.value)}>
             {product.variants.map((v) => (
               <option key={v.id} value={v.id}>
@@ -2099,7 +2096,7 @@ export function Options({
             })
           }
         >
-          Add to basket
+          {t("Add to basket")}
           <span>{money(price, currency)} +</span>
         </button>
       </div>

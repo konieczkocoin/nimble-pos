@@ -41,3 +41,26 @@ it('ignores an old save when the API instance changes within the same scope',asy
  await waitFor(()=>expect(next.request).toHaveBeenCalled());
  expect(screen.queryByText(/Obsolete recipe/)).toBeNull();expect((screen.getByRole('button',{name:'Save production draft'}) as HTMLButtonElement).disabled).toBe(false);
 });
+it('shows a loading state before a draft list resolves and keeps failed reads distinct from empty',async()=>{
+ let finish!:(value:unknown)=>void;const request=vi.fn(()=>new Promise(resolve=>{finish=resolve}));
+ render(<ProductionDraftPanel api={{request} as never} venueId="v" scope="owner" auth="owner" disabled={false} input={{recipeVersionId:'r',outputItemId:'o',batches:1,expectedYieldPerBatch:2,reason:'Plan'}} onOpen={vi.fn()}/>);
+ expect(screen.getByRole('status').textContent).toBe('Loading production drafts…');
+ finish({items:[],hasMore:false});
+ await screen.findByText('No saved production drafts.');
+ request.mockRejectedValueOnce(new Error('Connection lost'));
+ fireEvent.click(screen.getByRole('button',{name:'Refresh production drafts'}));
+ await screen.findByRole('alert');expect(screen.queryByText('No saved production drafts.')).toBeNull();
+});
+it('finishes list loading when a selected draft refresh overtakes the list request',async()=>{
+ const draft={id:'d',status:'DRAFT',revision:1,recipeName:'Morning recipe',recipeVersion:1,outputName:'Cups',batches:1,expectedYieldPerBatch:2,reason:'Morning plan'};
+ let finish!:(v:unknown)=>void,reads=0;
+ const request=vi.fn(async(_a:string,_m:string,path:string)=>{if(path.endsWith('/d'))return draft;if(++reads===1)return {items:[draft],hasMore:false};return new Promise(resolve=>{finish=resolve})});
+ render(<ProductionDraftPanel api={{request} as never} venueId="v" scope="owner" auth="owner" disabled={false} input={{recipeVersionId:'r',outputItemId:'o',batches:1,expectedYieldPerBatch:2,reason:'Morning plan'}} onOpen={vi.fn()}/>);
+ fireEvent.click(await screen.findByRole('button',{name:'Edit production draft'}));
+ fireEvent.click(screen.getByRole('button',{name:'Refresh production drafts'}));
+ await screen.findByText('Loading production drafts…');
+ fireEvent.click(screen.getByRole('button',{name:'Refresh selected draft'}));
+ await waitFor(()=>expect(request.mock.calls.some(c=>c[2].endsWith('/d'))).toBe(true));
+ finish({items:[draft],hasMore:false});
+ await waitFor(()=>expect(screen.queryByText('Loading production drafts…')).toBeNull());
+});

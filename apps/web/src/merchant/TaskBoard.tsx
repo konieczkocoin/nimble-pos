@@ -23,12 +23,15 @@ export function TaskBoard({ api, venueId, scope, employeeId, manage = false, own
     renderEvidence?: (task: StaffTask, refresh: () => Promise<void>) => ReactNode;
 }) {
     const [tasks, setTasks] = useState<StaffTask[]>([]), [templates, setTemplates] = useState<Template[]>([]), [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null);
+    const [loading,setLoading]=useState(true);
+    const errorFocus=useRef<HTMLParagraphElement|null>(null);
+    useEffect(()=>{if(error)errorFocus.current?.focus()},[error]);
     const [editor, setEditor] = useState<Template | 'new' | null>(null);
     const [people, setPeople] = useState<MerchantEmployee[]>(employees);
     const generation = useRef(0), locked = useRef(false), requestNumber = useRef(0);
     const auth = owner ? 'owner' : 'cashier';
     const path = `/venues/${venueId}`;
-    const load = useCallback(async () => { const g = generation.current, n = ++requestNumber.current; const result = await api.request<{
+    const load = useCallback(async () => { const g = generation.current, n = ++requestNumber.current; setLoading(true);try{const result = await api.request<{
         tasks: StaffTask[];
     }>(auth, 'GET', `${path}/tasks`); if (g === generation.current && n === requestNumber.current)
         setTasks(onlyTaskId ? result.tasks.filter(t=>t.id===onlyTaskId) : result.tasks); if (manage) {
@@ -41,11 +44,12 @@ export function TaskBoard({ api, venueId, scope, employeeId, manage = false, own
             setTemplates(result.templates);
             setPeople(staff.employees);
         }
-    } }, [api, auth, path, manage, onlyTaskId]);
+    } if(g===generation.current&&n===requestNumber.current)setError(null);
+    }finally{if(g===generation.current&&n===requestNumber.current)setLoading(false)} }, [api, auth, path, manage, onlyTaskId]);
     useEffect(() => {
         const g = ++generation.current;
         let running = false;
-        setTasks([]); setTemplates([]); setPeople([]); setEditor(null); setError(null); setBusy(false);
+        setLoading(true);setTasks([]); setTemplates([]); setPeople([]); setEditor(null); setError(null); setBusy(false);
         locked.current = false;
         const refresh = async () => {
             if (locked.current || running) return;
@@ -78,10 +82,10 @@ export function TaskBoard({ api, venueId, scope, employeeId, manage = false, own
             setBusy(false);
         }
     } };
-    return <section className="m-panel"><h2>{t('Staff tasks')}</h2>{error && <p role="alert">{error} <button disabled={busy} onClick={() => void run(load)}>{t('Retry')}</button></p>}
+    return <section className="m-panel"><h2>{t('Staff tasks')}</h2>{loading&&<p role="status">{t('Loading staff tasks…')}</p>}{error && <p role="alert" tabIndex={-1} ref={errorFocus}>{error} <button disabled={busy} onClick={() => void run(load)}>{t('Retry')}</button></p>}
  {manage && <><button onClick={() => setEditor('new')}>{t('Create task template')}</button>{templates.map(template => <div className="m-line" key={template.id}><span>{template.title} · {t(template.schedule === 'DAILY' ? 'Daily' : template.schedule === 'SHIFT' ? 'Every shift' : 'One-off')}{!template.active && ` · ${t('Inactive')}`}</span><button onClick={() => setEditor(template)}>{t('Edit')}</button></div>)}</>}
  {editor && <TemplateForm key={editor === 'new' ? 'new' : `${editor.id}:${editor.revision}`} initial={editor === 'new' ? undefined : editor} employees={manage ? people : employees} busy={busy} onClose={() => setEditor(null)} onSave={(input, reason, key) => run(() => api.request(auth, editor === 'new' ? 'POST' : 'PATCH', `${path}/task-templates${editor === 'new' ? '' : `/${editor.id}`}`, editor === 'new' ? { ...input, idempotencyKey: key } : { ...input, revision: editor.revision, reason }), () => setEditor(null))}/>}
- {!tasks.length && <p className="m-muted">{t('No staff tasks yet.')}</p>}
+ {!loading&&!error&&!tasks.length && <p className="m-muted">{t('No staff tasks yet.')}</p>}
  {tasks.map(task => <TaskCard key={`${scope}:${task.id}`} task={task} employeeId={employeeId} manage={manage} owner={owner} busy={busy} employees={manage ? people : employees} evidence={renderEvidence ? renderEvidence(task, load) : (owner || task.completedBy === `employee:${employeeId}` || (manage && viewPhotos)) && task.completedBy ? <TaskPhotos key={`${scope}:${task.id}:${viewPhotos}`} api={api} venueId={venueId} taskId={task.id} scope={scope} submissionNumber={task.submissionNumber} cashier={!owner} editable={(owner ? Boolean(task.completedBy?.startsWith('owner:')) : task.completedBy === `employee:${employeeId}`) && ['IN_PROGRESS','CHANGES_REQUESTED'].includes(task.status)} /> : null} assignment={(manage || owner) && task.status === 'TODO' ? <TaskAssignment key={`${task.id}:${task.revision}`} task={task} people={people} busy={busy} onSave={(assigneeEmployeeId, reviewerEmployeeId, reason, idempotencyKey) => run(() => api.request(auth, 'POST', `${path}/tasks/${task.id}/actions`, {action:'ASSIGN',revision:task.revision,assigneeEmployeeId,reviewerEmployeeId,reason,idempotencyKey}))}/> : null} onAction={(action, reason, comment, key) => run(() => api.request(auth, 'POST', `${path}/tasks/${task.id}/actions`, { action, revision: task.revision, idempotencyKey: key, reason: reason.trim() || undefined, comment: comment.trim() || undefined }))}/>)}
  </section>;
 }

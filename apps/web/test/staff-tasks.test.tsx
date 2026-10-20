@@ -99,3 +99,18 @@ it('marks an owner photo exception after loading the persisted task',async()=>{
  expect(screen.getByText('Photo exception reason: Camera broken')).toBeTruthy();
  expect(screen.queryByText(/PHOTO_EXCEPTION:/)).toBeNull();
 })
+it('does not present loading or failed task reads as a successful empty list', async () => {
+    let finish!: (value: Response) => void;
+    let first=true;
+    vi.stubGlobal('fetch', vi.fn(() => {if(first){first=false;return new Promise<Response>(resolve => { finish = resolve; })}return Promise.resolve(new Response(JSON.stringify({tasks:[]})))}));
+    render(<TaskBoard api={api} venueId="v" scope="staff" employeeId="worker"/>);
+    expect(screen.queryByText('No staff tasks yet.')).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('Loading staff tasks…');
+    await act(async () => finish(new Response(JSON.stringify({ error: { code: 'PAYMENTS_UNAVAILABLE' } }), { status: 503 })));
+    const alert=await screen.findByRole('alert');
+    expect(document.activeElement).toBe(alert);
+    expect(screen.queryByText('No staff tasks yet.')).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Retry'}));
+    expect(await screen.findByText('No staff tasks yet.')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+});

@@ -102,3 +102,12 @@ it('flags low availability even when physical stock is high and never guesses a 
     await screen.findByText('Available to sell: Unavailable portions');
     expect(screen.queryByText('Low stock')).toBeNull();
 });
+it('distinguishes loading stock from an empty venue and a failed read', async () => {
+    let finish!: (value: Response) => void;
+    vi.stubGlobal('fetch',vi.fn(()=>new Promise<Response>(resolve=>{finish=resolve})));
+    render(<InventoryBoard api={api} venueId="v" scope="owner" owner/>);
+    expect(screen.getByRole('status').textContent).toBe('Loading stock…');
+    await act(async()=>finish(json({error:{code:'TEMPORARY'}},503)));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('No stock items yet.')).toBeNull();
+});
